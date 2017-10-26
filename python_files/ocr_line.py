@@ -33,3 +33,5 @@ dataset['is_total'].replace("yes", 1, inplace=True)
 dataset['is_remittance'].replace("no", 0, inplace=True)
 dataset['is_total'].replace("no", 0, inplace=True)
 
+# ert
+
