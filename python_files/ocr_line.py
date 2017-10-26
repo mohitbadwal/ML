@@ -7,7 +7,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from sklearn.neighbors import KNeighborsClassifier
-
+# what the heeeelll
 
 # this function is used to remove punctuations marks and also removes stop words like 'the' , 'a' ,'an'
 def cleaning(sentence):
