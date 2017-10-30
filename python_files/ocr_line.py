@@ -25,16 +25,48 @@ def cleanandstem(sentence):
     return cleaning(sentence)
 
 
+'''
+$45,342.45 $56,23.78
+'''
+pattern_number = re.compile('([$]?[0-9]*[\,]?[0-9]*[\.][0-9]+)')
+
+
+# function to identify numbers
+def isNumber(s):
+    li = str(s).split(" ")
+    i = 0
+    d = 0
+    f = -1
+    er = []
+    for x in li:
+        if pattern_number.fullmatch(x) is not None:
+            er.append(x)
+            i = 1
+            if f == -1:
+                f = d
+        d = d + 1
+
+    if i == 1:
+        li = li[:f]
+        li.append(er[-1])
+        return ' '.join(li)
+    else:
+        return s
+
+
 # pattern to match totals
 pattern = re.compile(
-    "([$]?[0-9]*[\,]?[0-9]*[\.]?[0-9]+)|(.*(total)(s)?|(amount)).*([$]?([0-9]*[\,]?[0-9]*[\.]?[0-9]+))")
+    "([$]?[0-9]*[\,]?[0-9]*[\.][0-9]+)|(.*((total)(s)?|(amount)).*([$]?([0-9]*[\,]?[0-9]*[\.]?[0-9]+)))")
 
 
 # function for transformation of string to identify the possibility of a total according to the regular expression
 def totalFlag(x):
     global pattern
-
-    if pattern.match(str(x).lower()) is not None:
+    s = str(x).lower().strip()
+    print(s)
+    s = isNumber(s)
+    print(s)
+    if pattern.fullmatch(s) is not None:
         return 1
     else:
         # print(str(x))
@@ -58,7 +90,7 @@ print(dataset.shape)
 # countVectorizer = CountVectorizer(tokenizer=cleanandstem, min_df=50,max_df=0.5, stop_words='english')
 # theString = countVectorizer.fit_transform(dataset['row_string'])
 dataset['total'] = dataset['row_string'].apply(totalFlag)
-tfidf = TfidfVectorizer(tokenizer=cleanandstem, min_df=50, stop_words='english')
+tfidf = TfidfVectorizer(tokenizer=cleanandstem, min_df=100, stop_words='english')
 theString = tfidf.fit_transform(dataset['row_string'])
 combine1 = pd.DataFrame(theString.todense())
 combine1.columns = tfidf.get_feature_names()
@@ -75,13 +107,13 @@ print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
 
-'''
+
 print(accuracy_score(dataset['is_total_final'], dataset['total']))
 print(confusion_matrix(dataset['is_total_final'], dataset['total']))
 print(classification_report(dataset['is_total_final'], dataset['total']))
 dataset[dataset['is_total_final'] != dataset['total']].loc[:,['row_string','is_total_final','total']]\
     .to_csv('ocr_no_match.csv')
+
 '''
-'''
-([$]?[0-9]*[\,]?[0-9]*[\.]?[0-9]+)|(.*(total)(s)?|(amount)).*([$]?([0-9]*[\,]?[0-9]*[\.]?[0-9]+))
+([$]?[0-9]*[\,]?[0-9]*[\.]?[0-9]+)|(.*((total)(s)?|(amount)).*([$]?([0-9]*[\,]?[0-9]*[\.]?[0-9]+)))
 '''
