@@ -1,5 +1,5 @@
 import string
-
+import re
 import pandas as pd
 from sklearn import model_selection
 from sklearn.ensemble import RandomForestClassifier
@@ -25,6 +25,22 @@ def cleanandstem(sentence):
     return cleaning(sentence)
 
 
+# pattern to match totals
+pattern = re.compile(
+    "([$]?[0-9]*[\,]?[0-9]*[\.]?[0-9]+)|(.*(total)(s)?|(amount)).*([$]?([0-9]*[\,]?[0-9]*[\.]?[0-9]+))")
+
+
+# function for transformation of string to identify the possibility of a total according to the regular expression
+def totalFlag(x):
+    global pattern
+
+    if pattern.match(str(x).lower()) is not None:
+        return 1
+    else:
+        # print(str(x))
+        return 0
+
+
 dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image Batches-20171017T131547Z-001\Not_Success_rows.csv',
                       encoding='cp1256')
 s = ""
@@ -36,31 +52,36 @@ is_total_flag = 0
 # dataset['is_remittance'].replace("no", 0, inplace=True)
 # dataset['is_total'].replace("no", 0, inplace=True)
 
+
 dataset = dataset[dataset['page_type_final'] == 'remittance']
 print(dataset.shape)
 # countVectorizer = CountVectorizer(tokenizer=cleanandstem, min_df=50,max_df=0.5, stop_words='english')
 # theString = countVectorizer.fit_transform(dataset['row_string'])
-tfidf = TfidfVectorizer(tokenizer=cleanandstem, min_df=50,max_df=0.4, stop_words='english')
+dataset['total'] = dataset['row_string'].apply(totalFlag)
+tfidf = TfidfVectorizer(tokenizer=cleanandstem, min_df=50, stop_words='english')
 theString = tfidf.fit_transform(dataset['row_string'])
 combine1 = pd.DataFrame(theString.todense())
 combine1.columns = tfidf.get_feature_names()
 print(combine1.columns)
-X = dataset.loc[:, ['check_noOfPages']]
+X = dataset.loc[:, ['total']]
 X = pd.concat([combine1.reset_index(drop=True), X.reset_index(drop=True)], axis=1, ignore_index=True)
 Y = dataset.loc[:, 'is_total_final']
 validation_size = 0.3
 X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size)
 rfc = RandomForestClassifier(n_estimators=200)
-rfc.fit(X, Y)
+rfc.fit(X_train, Y_train)
 predictions = rfc.predict(X_validation)
 print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
 
-
-
 '''
-
-([$]?[0-9]*[\,]?[0-9]*[\.]?[0-9]+)|((total)(s)?|(amount)).*([$]?([0-9]*[\,]?[0-9]*[\.]?[0-9]+))
-
+print(accuracy_score(dataset['is_total_final'], dataset['total']))
+print(confusion_matrix(dataset['is_total_final'], dataset['total']))
+print(classification_report(dataset['is_total_final'], dataset['total']))
+dataset[dataset['is_total_final'] != dataset['total']].loc[:,['row_string','is_total_final','total']]\
+    .to_csv('ocr_no_match.csv')
+'''
+'''
+([$]?[0-9]*[\,]?[0-9]*[\.]?[0-9]+)|(.*(total)(s)?|(amount)).*([$]?([0-9]*[\,]?[0-9]*[\.]?[0-9]+))
 '''
