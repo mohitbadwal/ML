@@ -95,10 +95,10 @@ theString = tfidf.fit_transform(dataset['row_string'])
 combine1 = pd.DataFrame(theString.todense())
 combine1.columns = tfidf.get_feature_names()
 print(combine1.columns)
-X = dataset.loc[:, ['total']]
+X = dataset.loc[:, ['total', 'row_isLastRow']]
 X = pd.concat([combine1.reset_index(drop=True), X.reset_index(drop=True)], axis=1, ignore_index=True)
 Y = dataset.loc[:, 'is_total_final']
-validation_size = 0.3
+validation_size = 0.2
 X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size)
 rfc = RandomForestClassifier(n_estimators=200)
 rfc.fit(X_train, Y_train)
@@ -107,11 +107,10 @@ print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
 
-
 print(accuracy_score(dataset['is_total_final'], dataset['total']))
 print(confusion_matrix(dataset['is_total_final'], dataset['total']))
 print(classification_report(dataset['is_total_final'], dataset['total']))
-dataset[dataset['is_total_final'] != dataset['total']].loc[:,['row_string','is_total_final','total']]\
+dataset[dataset['is_total_final'] != dataset['total']].loc[:, ['row_string', 'is_total_final', 'total']] \
     .to_csv('ocr_no_match.csv')
 
 '''
