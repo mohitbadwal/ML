@@ -20,6 +20,14 @@ def cleaning(sentence):
     return [word for word in l if len(word) > 2]
 
 
+def cleaning_new(sentence):
+    fd = '?-+'
+    punctuation_removed = [char for char in sentence if char not in fd]
+    punctuation_removed = "".join(punctuation_removed)
+    l = [word.lower() for word in punctuation_removed.split()]
+    return ' '.join(l)
+
+
 # applying both together
 def cleanandstem(sentence):
     return cleaning(sentence)
@@ -31,10 +39,22 @@ $45,342.45 $56,23.78
 pattern_number = re.compile('([$]?[0-9]*[\,]?[0-9]*[\.][0-9]+)')
 
 
+def convertNumber(s):
+    d = ''
+    for i in str(s):
+        if i != ',' and i != '$':
+            d = d + i
+    if len(d) > 0:
+        return float(d)
+    else:
+        return -1
+
+
 # function to identify numbers
-def isNumber(s):
+def isNumber(s, e):
     li = str(s).split(" ")
     i = 0
+    gh = 0
     d = 0
     f = -1
     er = []
@@ -47,11 +67,13 @@ def isNumber(s):
         d = d + 1
 
     if i == 1:
+        if convertNumber(er[-1]) == e:
+            gh = er[-1]
         li = li[:f]
         li.append(er[-1])
-        return ' '.join(li)
+        return ' '.join(li), gh
     else:
-        return s
+        return s, gh
 
 
 # pattern to match totals
@@ -62,15 +84,21 @@ pattern = re.compile(
 # function for transformation of string to identify the possibility of a total according to the regular expression
 def totalFlag(x):
     global pattern
-    s = str(x).lower().strip()
+    d = x['row_string']
+    eddd = cleaning_new(d)
+    e = x['check_checkAmount']
+    s = str(eddd).lower().strip()
     print(s)
-    s = isNumber(s)
+    s, gh = isNumber(s, e)
     print(s)
-    if pattern.fullmatch(s) is not None:
-        return 1
+    if gh == 0:
+        if pattern.fullmatch(s) is not None:
+            return 1
+        else:
+            # print(str(x))
+            return 0
     else:
-        # print(str(x))
-        return 0
+        return 1
 
 
 dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image Batches-20171017T131547Z-001\Not_Success_rows.csv',
@@ -89,7 +117,7 @@ dataset = dataset[dataset['page_type_final'] == 'remittance']
 print(dataset.shape)
 # countVectorizer = CountVectorizer(tokenizer=cleanandstem, min_df=50,max_df=0.5, stop_words='english')
 # theString = countVectorizer.fit_transform(dataset['row_string'])
-dataset['total'] = dataset['row_string'].apply(totalFlag)
+dataset['total'] = dataset.apply(totalFlag, axis=1)
 tfidf = TfidfVectorizer(tokenizer=cleanandstem, min_df=100, stop_words='english')
 theString = tfidf.fit_transform(dataset['row_string'])
 combine1 = pd.DataFrame(theString.todense())
