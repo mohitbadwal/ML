@@ -13,6 +13,13 @@ dataset = dataset[dataset['page_type_final'] == 'remittance'].reset_index()
 print(dataset.shape)
 
 
+def rowIndex(row):
+    return row.name
+
+
+dataset['rowIndex'] = dataset.apply(rowIndex, axis=1)
+
+
 # countVectorizer = CountVectorizer(tokenizer=cleanandstem, min_df=50,max_df=0.5, stop_words='english')
 # theString = countVectorizer.fit_transform(dataset['row_string'])
 # this function is used to remove punctuations marks and also removes stop words like 'the' , 'a' ,'an'
@@ -28,7 +35,7 @@ def cleaning(sentence):
 .*((inv)|(policy)).*
 '''
 
-pattern = re.compile('.*((^|\s)((inv)|(pol)|(doc)|(net)|(num))).*')
+pattern = re.compile('.*((^|\s)((inv)|(pol)|(amt))).*')
 
 
 def containsNumber(x):
@@ -43,12 +50,34 @@ def containsNumber(x):
     return i
 
 
-def funcRegEx(x):
+def additionalCheck(x):
+    s = str(x).strip().split(" ")
+    if len(s) > 3:
+        return 1
+    else:
+        return 0
+
+
+def funcRegEx(e):
+    global dataset
+    ratio = e['row_numberAlphaRatio']
+    x = e['row_string']
     st = str(x).lower().strip()
     i = containsNumber(st)
-    if i <= 2:
+    if i < 2:
         if pattern.fullmatch(str(x).lower().strip()):
-            return 1
+            if ratio == 1:
+                if additionalCheck(str(x).lower().strip()):
+                    # if checkHead(dataset, e['rowIndex']-1):
+                    if ratio != e['is_heading']:
+                        print(ratio, str(x), e['is_heading'])
+                    return 1
+                    # else:
+                    # return 0
+                else:
+                    return 0
+            else:
+                return 0
         else:
             return 0
     else:
@@ -68,8 +97,48 @@ def cleanandstem(sentence):
     return cleaning(sentence)
 
 
-pat = re.compile('([a-zA-Z]*[0-9]+).*([$]?[0-9]*[\,]?[0-9]*[\.]?[0-9]+)')
+pat = re.compile('(^|.)*(([a-zA-Z]*[0-9]+).*([$]?[0-9]*[\,]?[0-9]*[\.]?[0-9]+))($|.)*')
 pat2 = re.compile('([$]?[0-9]*[\,]?[0-9]*[\.][0-9]+)')
+
+
+def alphaNumeric(x):
+    d = 0
+    s = str(x).split(":")
+    if len(s) > 1:
+        # print(s)
+        try:
+            d = float(float(s[0]) / float(s[1]))
+        except ZeroDivisionError:
+            # print("error", s)
+            return 0
+    else:
+        d = float(s[0])
+    # print(d)
+    if d <= 0.1:
+        return 1
+    else:
+        return 0
+
+
+number_pattern = re.compile('.*([0-9]{5})+.*')
+
+
+def checkHead(dataset1, e):
+    i = -1
+    for r in range(1, 6):
+        w = e + r
+        s = dataset1.loc[w]['row_string']
+        if number_pattern.fullmatch(str(s).lower().strip()) is not None:
+            i = 1
+            # print(r, str(s).lower())
+            break
+        else:
+            i = 0
+    if i == 0:
+        # print(dataset1.loc[e]['row_string'])
+        return 0
+    else:
+        return 1
 
 
 def checkHeading(dataset1):
@@ -77,9 +146,10 @@ def checkHeading(dataset1):
     for e in range(0, len(dataset1)):
         if dataset1.loc[e]['heading'] == 1:
             for r in range(1, 6):
-                s = dataset1.loc[e + r]['row_string']
+                w = e + r
+                s = dataset1.loc[w]['row_string']
 
-                # print(s)
+                print(r, w, s)
                 if pat.fullmatch(str(s).lower().strip()) is not None:
                     i = 1
                     break
@@ -93,16 +163,24 @@ def checkHeading(dataset1):
 
 
 dataset['row_string'] = dataset['row_string'].apply(cleaning_new)
-dataset['heading'] = dataset['row_string'].apply(funcRegEx)
+dataset['row_numberAlphaRatio'] = dataset['row_numberAlphaRatio'].apply(alphaNumeric)
+dataset['heading'] = dataset.apply(funcRegEx, axis=1)
+# print(dataset['row_numberAlphaRatio'].isnull().sum())
 # dataset = checkHeading(dataset)
 tfidf = CountVectorizer(tokenizer=cleanandstem, min_df=100, stop_words='english',
-                        vocabulary=['invoice', 'policy', 'gross', 'net', 'number', 'date', 'paid', 'document',
-                                    'description', 'discount', 'inv'])
+                        vocabulary=['invoice', 'policy', 'net', 'number', 'date', 'paid', 'document',
+                                    'discount', 'inv'])
 theString = tfidf.fit_transform(dataset['row_string'])
+# a=theString.toarray()
+# df_temp=pd.DataFrame(a,columns=tfidf.get_feature_names())
+# df_temp=pd.concat([dataset['row_string'],df_temp],axis=1)
+# df_temp.to_csv("term.csv")
 combine1 = pd.DataFrame(theString.todense())
 combine1.columns = tfidf.get_feature_names()
 print(combine1.columns)
-X = dataset.loc[:, ['heading']]
+X = dataset.loc[:, ['heading',
+                    'row_numberAlphaRatio'
+                    ]]
 X = pd.concat([combine1.reset_index(drop=True), X.reset_index(drop=True)], axis=1, ignore_index=True)
 Y = dataset.loc[:, 'is_heading']
 validation_size = 0.2
@@ -121,20 +199,21 @@ rfc = RandomForestClassifier(n_estimators=200, )
 rfc.fit(X_train, Y_train)
 predictions = rfc.predict(X_validation)
 predictions_prob = rfc.predict_proba(X_validation)
+print(X.columns, rfc.feature_importances_)
 pred_prob = pd.DataFrame(data=predictions_prob, columns=[0, 1])
 det = pd.DataFrame({"y_val": Y_validation.copy(deep=False).values, "total":
     X_validation.copy(deep=False).iloc[:, -2].values, "pred": predictions, "pred_proba_0": pred_prob[0],
                     "pred_proba_1": pred_prob[1]})
-# det['pred'] = det.apply(func, axis=1)
+det['pred'] = det.apply(func, axis=1)
 a4 = pd.DataFrame(data=predictions, columns=['predictions'])
 
 print(accuracy_score(det['y_val'], det['pred']))
 print(confusion_matrix(det['y_val'], det['pred']))
 print(classification_report(det['y_val'], det['pred']))
 
-print(accuracy_score(Y_validation, X_validation.iloc[:, -1].values))
-print(confusion_matrix(Y_validation, X_validation.iloc[:, -1].values))
-print(classification_report(Y_validation, X_validation.iloc[:, -1].values))
+print(accuracy_score(Y_validation, X_validation.iloc[:, -2].values))
+print(confusion_matrix(Y_validation, X_validation.iloc[:, -2].values))
+print(classification_report(Y_validation, X_validation.iloc[:, -2].values))
 
 dataset[dataset['is_heading'] != dataset['heading']].loc[:, ['row_string', 'is_heading', 'heading']] \
     .to_csv('ocr_heading.csv')

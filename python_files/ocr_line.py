@@ -128,6 +128,7 @@ def last(x):
 
 dataset = dataset[dataset['page_type_final'] == 'remittance'].reset_index()
 print(dataset.shape)
+
 # countVectorizer = CountVectorizer(tokenizer=cleanandstem, min_df=50,max_df=0.5, stop_words='english')
 # theString = countVectorizer.fit_transform(dataset['row_string'])
 dataset['total'] = dataset.apply(totalFlag, axis=1)
