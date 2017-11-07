@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 
-dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image Batches-20171017T131547Z-001\Not_Success_rows_ver.csv',
+dataset = pd.read_csv(r'C:\Users\mohit.badwal.NOTEBOOK546.000\Downloads\Not_Success_rows_ver.csv',
                       encoding='cp1256')
 dataset = dataset[dataset['page_type_final'] == 'remittance'].reset_index()
 print(dataset.shape)
@@ -35,14 +35,26 @@ def cleaning(sentence):
 .*((inv)|(policy)).*
 '''
 
-pattern = re.compile('.*((^|\s)((inv)|(pol)|(amt))).*')
+pattern = re.compile('.*((^|\s)((inv)|(pol)|(amt)|(amo)|((number ){2,}))).*')
+
+
+def getAlphaNumRatio(x):
+    digits = sum(c.isdigit() for c in x)
+    letters = sum(c.isalpha() for c in x)
+    if letters == 0:
+        return 0
+    else:
+        if (digits / letters) < 0.1:
+            return 1
+        else:
+            return 0
 
 
 def containsNumber(x):
     i = 0
     for s in x:
         try:
-            if int(s):
+            if 0 >= int(s) <= 9:
                 i = i + 1
         except ValueError:
             d = 0
@@ -64,7 +76,7 @@ def funcRegEx(e):
     x = e['row_string']
     st = str(x).lower().strip()
     i = containsNumber(st)
-    if i < 2:
+    if i <= 2:
         if pattern.fullmatch(str(x).lower().strip()):
             if ratio == 1:
                 if additionalCheck(str(x).lower().strip()):
@@ -163,30 +175,36 @@ def checkHeading(dataset1):
 
 
 dataset['row_string'] = dataset['row_string'].apply(cleaning_new)
-dataset['row_numberAlphaRatio'] = dataset['row_numberAlphaRatio'].apply(alphaNumeric)
+dataset['row_numberAlphaRatio'] = dataset['row_string'].apply(getAlphaNumRatio)
 dataset['heading'] = dataset.apply(funcRegEx, axis=1)
 # print(dataset['row_numberAlphaRatio'].isnull().sum())
 # dataset = checkHeading(dataset)
-tfidf = CountVectorizer(tokenizer=cleanandstem, min_df=100, stop_words='english',
-                        vocabulary=['invoice', 'policy', 'net', 'number', 'date', 'paid', 'document',
+tfidf = CountVectorizer(tokenizer=cleanandstem, min_df=100, stop_words='english', ngram_range=(1, 2),
+                        vocabulary=['invoice', 'policy', 'net', 'paid', 'document',
                                     'discount', 'inv'])
 theString = tfidf.fit_transform(dataset['row_string'])
-# a=theString.toarray()
-# df_temp=pd.DataFrame(a,columns=tfidf.get_feature_names())
-# df_temp=pd.concat([dataset['row_string'],df_temp],axis=1)
+# a = theString.toarray()
+# df_temp = pd.DataFrame(a, columns=tfidf.get_feature_names())
+# df_temp = pd.concat([dataset['row_index'],dataset['row_string'], dataset['is_remittance_final'], dataset['is_total_final'],
+#                    dataset['is_heading'], df_temp], axis=1)
 # df_temp.to_csv("term.csv")
 combine1 = pd.DataFrame(theString.todense())
 combine1.columns = tfidf.get_feature_names()
 print(combine1.columns)
 X = dataset.loc[:, ['heading',
-                    'row_numberAlphaRatio'
+                    'row_numberAlphaRatio',
+                    'row_string'
                     ]]
 X = pd.concat([combine1.reset_index(drop=True), X.reset_index(drop=True)], axis=1, ignore_index=True)
 Y = dataset.loc[:, 'is_heading']
 validation_size = 0.2
 seed = 20
 X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
-                                                                                random_state=seed)
+                                                                               random_state=seed)
+
+X_train = X_train.iloc[:, :-1]
+r = X.iloc[:,-1]
+X = X.iloc[:, :-1]
 
 
 def func(x):
@@ -197,23 +215,23 @@ def func(x):
 
 rfc = RandomForestClassifier(n_estimators=200, )
 rfc.fit(X_train, Y_train)
-predictions = rfc.predict(X_validation)
-predictions_prob = rfc.predict_proba(X_validation)
+predictions = rfc.predict(X)
+predictions_prob = rfc.predict_proba(X)
 print(X.columns, rfc.feature_importances_)
 pred_prob = pd.DataFrame(data=predictions_prob, columns=[0, 1])
-det = pd.DataFrame({"y_val": Y_validation.copy(deep=False).values, "total":
-    X_validation.copy(deep=False).iloc[:, -2].values, "pred": predictions, "pred_proba_0": pred_prob[0],
+det = pd.DataFrame({"string": r, "y_val": Y.copy(deep=False).values, "total":
+    X.copy(deep=False).iloc[:, -2].values, "pred": predictions, "pred_proba_0": pred_prob[0],
                     "pred_proba_1": pred_prob[1]})
 det['pred'] = det.apply(func, axis=1)
 a4 = pd.DataFrame(data=predictions, columns=['predictions'])
-
+det.to_csv('det.csv')
 print(accuracy_score(det['y_val'], det['pred']))
 print(confusion_matrix(det['y_val'], det['pred']))
 print(classification_report(det['y_val'], det['pred']))
 
-print(accuracy_score(Y_validation, X_validation.iloc[:, -2].values))
-print(confusion_matrix(Y_validation, X_validation.iloc[:, -2].values))
-print(classification_report(Y_validation, X_validation.iloc[:, -2].values))
+print(accuracy_score(Y, X.iloc[:, -2].values))
+print(confusion_matrix(Y, X.iloc[:, -2].values))
+print(classification_report(Y, X.iloc[:, -2].values))
 
 dataset[dataset['is_heading'] != dataset['heading']].loc[:, ['row_string', 'is_heading', 'heading']] \
     .to_csv('ocr_heading.csv')
