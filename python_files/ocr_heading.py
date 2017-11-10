@@ -191,7 +191,8 @@ theString = tfidf.fit_transform(dataset['row_string'])
 combine1 = pd.DataFrame(theString.todense())
 combine1.columns = tfidf.get_feature_names()
 print(combine1.columns)
-X = dataset.loc[:, ['heading',
+X = dataset.loc[:, ['row_rowNumber',
+                    'heading',
                     'row_numberAlphaRatio',
                     'row_string'
                     ]]
@@ -200,11 +201,11 @@ Y = dataset.loc[:, 'is_heading']
 validation_size = 0.2
 seed = 20
 X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
-                                                                               random_state=seed)
+                                                                                )#  random_state=seed)
 
 X_train = X_train.iloc[:, :-1]
-r = X.iloc[:,-1]
-X = X.iloc[:, :-1]
+r = X_validation.iloc[:,-1]
+X_validation = X_validation.iloc[:, :-1]
 
 
 def func(x):
@@ -215,12 +216,12 @@ def func(x):
 
 rfc = RandomForestClassifier(n_estimators=200, )
 rfc.fit(X_train, Y_train)
-predictions = rfc.predict(X)
-predictions_prob = rfc.predict_proba(X)
+predictions = rfc.predict(X_validation)
+predictions_prob = rfc.predict_proba(X_validation)
 print(X.columns, rfc.feature_importances_)
 pred_prob = pd.DataFrame(data=predictions_prob, columns=[0, 1])
-det = pd.DataFrame({"string": r, "y_val": Y.copy(deep=False).values, "total":
-    X.copy(deep=False).iloc[:, -2].values, "pred": predictions, "pred_proba_0": pred_prob[0],
+det = pd.DataFrame({"y_val": Y_validation.copy(deep=False).values, "total":
+    X_validation.copy(deep=False).iloc[:, -2].values, "pred": predictions, "pred_proba_0": pred_prob[0],
                     "pred_proba_1": pred_prob[1]})
 det['pred'] = det.apply(func, axis=1)
 a4 = pd.DataFrame(data=predictions, columns=['predictions'])
@@ -229,9 +230,9 @@ print(accuracy_score(det['y_val'], det['pred']))
 print(confusion_matrix(det['y_val'], det['pred']))
 print(classification_report(det['y_val'], det['pred']))
 
-print(accuracy_score(Y, X.iloc[:, -2].values))
-print(confusion_matrix(Y, X.iloc[:, -2].values))
-print(classification_report(Y, X.iloc[:, -2].values))
+print(accuracy_score(Y_validation, X_validation.iloc[:, -2].values))
+print(confusion_matrix(Y_validation, X_validation.iloc[:, -2].values))
+print(classification_report(Y_validation, X_validation.iloc[:, -2].values))
 
 dataset[dataset['is_heading'] != dataset['heading']].loc[:, ['row_string', 'is_heading', 'heading']] \
     .to_csv('ocr_heading.csv')
