@@ -7,7 +7,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 
-dataset = pd.read_csv(r'C:\Users\mohit.badwal.NOTEBOOK546.000\Downloads\Not_Success_rows_ver.csv',
+dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image '
+                      r'Batches-20171017T131547Z-001\Not_Success_rows_ver_clean.csv',
                       encoding='cp1256')
 test_dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image Batches-20171017T131547Z-001\Success_rows3.csv',
                            encoding='cp1256')
@@ -187,9 +188,9 @@ test_dataset['heading'] = test_dataset.apply(funcRegEx, axis=1)
 # print(dataset['row_numberAlphaRatio'].isnull().sum())
 # dataset = checkHeading(dataset)
 tfidf = CountVectorizer(tokenizer=cleanandstem, min_df=5, stop_words='english',  # ngram_range=(1, 2),
-                                                vocabulary=['invoice', 'policy', 'net', 'paid', 'document',
+                        vocabulary=['invoice', 'policy', 'net', 'paid', 'document',
 
-                           'discount', 'inv'])
+                                    'discount', 'inv'])
 theString = tfidf.fit_transform(dataset['row_string'])
 # a = theString.toarray()
 # df_temp = pd.DataFrame(a, columns=tfidf.get_feature_names())
@@ -202,14 +203,16 @@ combine1.columns = tfidf.get_feature_names()
 print(combine1.columns)
 combine2 = pd.DataFrame(testString.todense())
 combine2.columns = tfidf.get_feature_names()
-X = dataset.loc[:, ['heading',
+X = dataset.loc[:, ['row_rowNumber',
+                    'heading',
                     'row_numberAlphaRatio',
                     'row_string'
                     ]]
 X = pd.concat([combine1.reset_index(drop=True), X.reset_index(drop=True)], axis=1, ignore_index=True)
 Y = dataset.loc[:, 'is_heading']
 X = X.iloc[:, :-1]
-X1 = test_dataset.loc[:, ['heading',
+X1 = test_dataset.loc[:, ['row_rowNumber',
+                          'heading',
                           'row_numberAlphaRatio',
                           ]]
 X1 = pd.concat([combine2.reset_index(drop=True), X1.reset_index(drop=True)], axis=1, ignore_index=True)
@@ -226,7 +229,11 @@ Y = dataset.loc[:, 'is_heading']
 validation_size = 0.2
 seed = 20
 X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
+<<<<<<< Updated upstream
                                                                                 random_state=seed)
+=======
+                                                                                  random_state=seed)
+>>>>>>> Stashed changes
 
 r = X_validation.iloc[:, -1]
 X_train = X_train.iloc[:, :-1]

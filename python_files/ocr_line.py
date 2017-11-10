@@ -119,7 +119,8 @@ def totalFlag(x):
         #  return 1
 
 
-dataset = pd.read_csv(r'C:\Users\mohit.badwal.NOTEBOOK546.000\Downloads\Not_Success_rows_ver.csv',
+dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image '
+                      r'Batches-20171017T131547Z-001\Not_Success_rows_ver_clean.csv',
                       encoding='cp1256')
 s = ""
 is_remit_flag = 0
@@ -170,7 +171,15 @@ X = X.iloc[:, :-1]
 X1 = test_dataset.loc[:, ['total',
                           'row_isLastRow',
                           ]]
+
 X1 = pd.concat([combine2.reset_index(drop=True), X1.reset_index(drop=True)], axis=1, ignore_index=True)
+
+def func(x):
+    if x['total'] == 1 and x['pred_proba_0'] < 0.88 and x['pred'] == 0:
+        return 1
+    return x['pred']
+
+
 rfc = RandomForestClassifier(n_estimators=200, )
 rfc.fit(X, Y)
 predictions = rfc.predict(X1)
@@ -183,9 +192,9 @@ validation_size = 0.2
 seed = 20
 X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
                                                                                 random_state=seed)
-X = X.iloc[:, :-1]
-X_train = X_train.iloc[:, :-1]
 er = X_validation.iloc[:, -1]
+# X_validation = X_validation.iloc[:, :-1]
+X_train = X_train.iloc[:, :-1]
 X_validation = X_validation.iloc[:, :-1]
 
 
@@ -200,11 +209,11 @@ def func(x):
 rfc = RandomForestClassifier(n_estimators=200)
 rfc.fit(X_train, Y_train)
 print(rfc.feature_importances_)
-predictions = rfc.predict(X)
-predictions_prob = rfc.predict_proba(X)
+predictions = rfc.predict(X_validation)
+predictions_prob = rfc.predict_proba(X_validation)
 pred_prob = pd.DataFrame(data=predictions_prob, columns=[0, 1])
-det = pd.DataFrame({"y_val": Y.copy(deep=False).values, "total":
-    X.copy(deep=False).iloc[:, -2].values, "pred": predictions, "pred_proba_0": pred_prob[0],
+det = pd.DataFrame({"y_val": Y_validation.copy(deep=False).values, "total":
+    X_validation.copy(deep=False).iloc[:, -2].values, "pred": predictions, "pred_proba_0": pred_prob[0],
                     "pred_proba_1": pred_prob[1]})
 det.to_csv("det1.csv")
 det['pred'] = det.apply(func, axis=1)
@@ -217,9 +226,9 @@ print(accuracy_score(det['y_val'], det['pred']))
 print(confusion_matrix(det['y_val'], det['pred']))
 print(classification_report(det['y_val'], det['pred']))
 
-print(accuracy_score(Y, X.iloc[:, -2].values))
-print(confusion_matrix(Y, X.iloc[:, -2].values))
-print(classification_report(Y, X.iloc[:, -2].values))
+print(accuracy_score(Y_validation, X_validation.iloc[:, -2].values))
+print(confusion_matrix(Y_validation, X_validation.iloc[:, -2].values))
+print(classification_report(Y_validation, X_validation.iloc[:, -2].values))
 dataset[dataset['is_total_final'] != dataset['total']].loc[:, ['row_index', 'row_string', 'is_total_final', 'total']] \
     .to_csv('ocr_no_match.csv')
 '''
