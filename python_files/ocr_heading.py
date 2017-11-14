@@ -6,8 +6,10 @@ from sklearn import model_selection
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.neural_network import MLPClassifier
 
-dataset = pd.read_csv(r'C:\Users\mohit.badwal.NOTEBOOK546.000\Downloads\Not_Success_rows_ver.csv',
+dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image '
+                      r'Batches-20171017T131547Z-001\Not_Success_rows_ver_clean.csv',
                       encoding='cp1256')
 dataset = dataset[dataset['page_type_final'] == 'remittance'].reset_index()
 print(dataset.shape)
@@ -201,7 +203,7 @@ Y = dataset.loc[:, 'is_heading']
 validation_size = 0.2
 seed = 20
 X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
-                                                                                )#  random_state=seed)
+                                                                                  random_state=seed)
 
 X_train = X_train.iloc[:, :-1]
 r = X_validation.iloc[:,-1]
@@ -214,13 +216,13 @@ def func(x):
     return x['pred']
 
 
-rfc = RandomForestClassifier(n_estimators=200, )
+rfc = MLPClassifier(hidden_layer_sizes=(100, 100), activation='relu')
 rfc.fit(X_train, Y_train)
 predictions = rfc.predict(X_validation)
 predictions_prob = rfc.predict_proba(X_validation)
-print(X.columns, rfc.feature_importances_)
+# print(X.columns, rfc.feature_importances_)
 pred_prob = pd.DataFrame(data=predictions_prob, columns=[0, 1])
-det = pd.DataFrame({"y_val": Y_validation.copy(deep=False).values, "total":
+det = pd.DataFrame({"str":r.values,"y_val": Y_validation.copy(deep=False).values, "total":
     X_validation.copy(deep=False).iloc[:, -2].values, "pred": predictions, "pred_proba_0": pred_prob[0],
                     "pred_proba_1": pred_prob[1]})
 det['pred'] = det.apply(func, axis=1)
