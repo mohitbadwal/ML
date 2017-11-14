@@ -110,7 +110,8 @@ def totalFlag(x):
     print(s)
     # if gh == 0:
     if pattern.fullmatch(s) is not None:
-        if re.search('(gross)', s) is None and re.search('(render)', s) is None:
+        if re.search('(gross)', s) is None and re.search('(render)', s) is None \
+                and re.search('(comm(\s)?%)|(com(\s)?%)',s) is None:
             if gh != 0:
                 return 1
             else:
@@ -178,7 +179,7 @@ Y = dataset.loc[:, 'is_total_final']
 validation_size = 0.2
 seed = 20
 X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
-                                                                                )  # random_state=seed)
+                                                                                random_state=seed)
 # X_validation = X_validation.iloc[:, :-1]
 X_train = X_train.iloc[:, :-1]
 er = X_validation.iloc[:, -1]
@@ -186,7 +187,7 @@ X_validation = X_validation.iloc[:, :-1]
 
 
 # Y_validation = Y_validation.iloc[-10:-9]
-
+# TODO: Get func(x) in export branch for combining the regex model with ML model
 def func(x):
     if x['total'] == 1 and x['pred_proba_0'] < 0.88 and x['pred'] == 0:
         return 1
