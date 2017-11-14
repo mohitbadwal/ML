@@ -40,9 +40,7 @@ def cleanandstem(sentence):
 
 for i in data['check_checkNumber'].unique():
     #total_pages=temp.at[0,'check_accountNumber']
-    print('i',i)
     for j in data[data['check_checkNumber']==i]['page_pageNumber'].unique():
-        print('j',j)
         temp=pd.DataFrame()
         temp=data[(data['check_checkNumber']==i) & (data['page_pageNumber']==j)]
         temp.reset_index(drop=True,inplace=True)
@@ -114,6 +112,80 @@ for i in data['check_checkNumber'].unique():
 
 #print(data['distance_of_remittance_row'])
 
+
+print('Started...')
+data['remittance_result_2']=0
+for i in data['check_checkNumber'].unique():
+    for j in data[data['check_checkNumber']==i]['page_pageNumber'].unique():
+        temp=pd.DataFrame()
+        temp1=pd.DataFrame()
+        temp2=pd.DataFrame()
+        temp=data[(data['check_checkNumber']==i) & (data['page_pageNumber']==j)]
+        temp=temp.reset_index(drop=True)
+        first_row=1
+        last_row=temp.at[temp.shape[0]-1,'row_rowNumber']
+        temp.sort_values('row_rowNumber', inplace=True)
+        heading_row_number=first_row
+        total_row_number=last_row
+        for k in range(0,temp.shape[0]-1):
+            if ((temp.at[k,'is_heading']==1) & (temp.at[k+1,'is_heading']==0)):
+                temp1=temp1.append(temp.iloc[[k]],ignore_index=True)
+            else:
+                continue
+        for k in range(1, temp.shape[0]):
+            if ((temp.at[k-1, 'is_total_final'] == 0) & (temp.at[k, 'is_total_final'] == 1)):
+                temp2 = temp2.append(temp.iloc[[k]], ignore_index=True)
+            else:
+                continue
+        if temp1.empty | temp2.empty:
+            data.loc[(data['check_checkNumber'] == i) & (data['page_pageNumber'] == j) & (
+            (data['row_rowNumber'] > heading_row_number) & (
+            data['row_rowNumber'] < total_row_number)), 'remittance_result_2'] = 1
+        else:
+            temp1.sort_values('row_rowNumber',inplace=True)
+            temp1 = temp1.reset_index(drop=True)
+            temp2.sort_values('row_rowNumber',inplace=True)
+            temp2 = temp2.reset_index(drop=True)
+            count1 = temp1.shape[0]
+            count2 = temp2.shape[0]
+            count3 = 0
+            count4 = 0
+            while (1):
+                #print('a1')
+                if ((count3 == count1 - 1) | (count4 == count2 - 1)):
+                    #print('a2')
+                    data.loc[(data['check_checkNumber'] == i) & (data['page_pageNumber'] == j) & (
+                        (data['row_rowNumber'] > temp1.at[count3, 'row_rowNumber']) & (
+                            data['row_rowNumber'] < temp2.at[temp2.shape[0]-1, 'row_rowNumber'])), 'remittance_result_2'] = 1
+                    count3=count3+1
+                    count4=count4+1
+                elif ((temp1.at[count3, 'row_rowNumber'] < temp2.at[count4, 'row_rowNumber']) & (
+                            temp2.at[count4, 'row_rowNumber'] < temp1.at[count3 + 1, 'row_rowNumber'])):
+                    #print('a3')
+                    data.loc[(data['check_checkNumber'] == i) & (data['page_pageNumber'] == j) & (
+                        (data['row_rowNumber'] > temp1.at[count3, 'row_rowNumber']) & (
+                            data['row_rowNumber'] < temp2.at[count4, 'row_rowNumber'])), 'remittance_result_2'] = 1
+                    count3 = count3 + 1
+                    count4 = count4 + 1
+                elif ((temp1.at[count3, 'row_rowNumber'] < temp2.at[count4, 'row_rowNumber']) & (
+                            temp2.at[count4, 'row_rowNumber'] > temp1.at[count3 + 1, 'row_rowNumber'])):
+                    #print('a4')
+                    count3 = count3 + 1
+                elif (temp1.at[count3, 'row_rowNumber'] > temp2.at[count4, 'row_rowNumber']):
+                    #print('a5')
+                    count4 = count4 + 1
+                if ((count3 >= count1) | (count4 >= count2)):
+                    #print('a6')
+                    break
+
+
+
+
+
+
+
+
+
 vocab=['cnl','renb','date','flat','check','travel','newb','inst',
 #'lpm',#'pckg'#'construction','bond'
 ]
@@ -171,7 +243,8 @@ X_validation = pd.concat([X_validation, combine2.reset_index(drop=True)], axis=1
 # validation_size = 0.3
 # X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size)
 #
-rfc = RandomForestClassifier(n_estimators=200)
+#rfc = RandomForestClassifier(n_estimators=200)
+rfc=sklearn.neural_network.MLPClassifier(hidden_layer_sizes=(100))
 rfc.fit(X_train, Y_train)
 predictions = rfc.predict(X_validation)
 print(accuracy_score(Y_validation, predictions))
@@ -241,58 +314,78 @@ for i in range(0,X_validation.shape[0]):
         df3=df3.append(X_validation1.iloc[[i]],ignore_index=True)
 
 #df3.to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\wrong_cases.csv")
-print('Started...')
-data['remittance_result_2']=0
-for i in data['check_checkNumber'].unique():
-    print('i',i)
-    for j in data[data['check_checkNumber']==i]['page_pageNumber'].unique():
-        print('j', j)
-        temp=pd.DataFrame()
-        temp1=pd.DataFrame()
-        temp2=pd.DataFrame()
-        temp=data[(data['check_checkNumber']==i) & (data['page_pageNumber']==j)]
-        temp=temp.reset_index(drop=True,inplace=True)
-        first_row=1
-        last_row=temp.at[temp.shape[0]-1,'row_rowNumber']
-        temp = temp.sort_values('row_rowNumber', inplace=True)
-        heading_row_number=first_row
-        total_row_number=last_row
-        for k in range(0,temp.shape[0]-1):
-            print('k', k)
-            if ((temp.at[k,'is_heading']==1) & (temp.at[k+1,'is_heading']==0)):
-                temp1=temp1.append(temp.iloc[[k]],ignore_index=True)
-            else:
-                continue
-        for k in range(1, temp.shape[0] - 1):
-            print('k', k)
-            if ((temp.at[k-1, 'is_total_final'] == 0) & (temp.at[k, 'is_total_final'] == 1)):
-                temp2 = temp2.append(temp.iloc[[k]], ignore_index=True)
-            else:
-                continue
-        if temp1.empty | temp2.empty:
-            data.loc[(data['check_checkNumber'] == i) & (data['page_pageNumber'] == j) & (
-            (data['row_rowNumber'] > heading_row_number) & (
-            data['row_rowNumber'] < total_row_number)), 'remittance_result'] = 1
-        else:
-            temp1 = temp1.sort_values('row_rowNumber')
-            temp1 = temp1.reset_index(drop=True)
-            temp2 = temp2.sort_values('row_rowNumber')
-            temp2 = temp2.reset_index(drop=True)
-            count1 = temp1.shape[0]
-            count2 = temp2.shape[0]
-            count3 = 0
-            count4 = 0
-            for k in range(0, count1):
-                if ((temp1.at[count3, 'row_rowNumber'] < temp2.at[count4, 'row_rowNumber']) & (temp2.at[count4, 'row_rowNumber'] < temp1.at[count3 + 1, 'row_rowNumber'])):
-                    data.loc[(data['check_checkNumber'] == i) & (data['page_pageNumber'] == j) & ((data['row_rowNumber'] > temp1.at[count3, 'row_rowNumber']) & (data['row_rowNumber'] < temp2.at[count4, 'row_rowNumber'])), 'remittance_result_2'] = 1
-                    count3 = count3 + 1
-                    count4 = count4 + 1
-                elif ((temp1.at[count3, 'row_rowNumber'] < temp2.at[count4, 'row_rowNumber']) & (
-                    temp2.at[count4, 'row_rowNumber'] > temp1.at[count3 + 1, 'row_rowNumber'])):
-                    count3 = count3 + 1
-                elif (temp1.at[count3, 'row_rowNumber'] > temp2.at[count4, 'row_rowNumber']):
-                    count4 = count4 + 1
-                if ((count3 == count1) | (count4 == count2)):
-                    break
-                else:
-                    continue
+# print('Started...')
+# data['remittance_result_2']=0
+# for i in data['check_checkNumber'].unique():
+#     print('i',i)
+#     for j in data[data['check_checkNumber']==i]['page_pageNumber'].unique():
+#         print('j', j)
+#         temp=pd.DataFrame()
+#         temp1=pd.DataFrame()
+#         temp2=pd.DataFrame()
+#         temp=data[(data['check_checkNumber']==i) & (data['page_pageNumber']==j)]
+#         temp=temp.reset_index(drop=True)
+#         first_row=1
+#         last_row=temp.at[temp.shape[0]-1,'row_rowNumber']
+#         temp.sort_values('row_rowNumber', inplace=True)
+#         heading_row_number=first_row
+#         total_row_number=last_row
+#         for k in range(0,temp.shape[0]-1):
+#             print('k', k)
+#             if ((temp.at[k,'is_heading']==1) & (temp.at[k+1,'is_heading']==0)):
+#                 temp1=temp1.append(temp.iloc[[k]],ignore_index=True)
+#             else:
+#                 continue
+#         for k in range(1, temp.shape[0]):
+#             print('k', k)
+#             if ((temp.at[k-1, 'is_total_final'] == 0) & (temp.at[k, 'is_total_final'] == 1)):
+#                 print('hello')
+#                 temp2 = temp2.append(temp.iloc[[k]], ignore_index=True)
+#                 print('hello2',last_row)
+#             else:
+#                 continue
+#         if temp1.empty | temp2.empty:
+#             data.loc[(data['check_checkNumber'] == i) & (data['page_pageNumber'] == j) & (
+#             (data['row_rowNumber'] > heading_row_number) & (
+#             data['row_rowNumber'] < total_row_number)), 'remittance_result'] = 1
+#         else:
+#             temp1.sort_values('row_rowNumber',inplace=True)
+#             temp1 = temp1.reset_index(drop=True)
+#             temp2.sort_values('row_rowNumber',inplace=True)
+#             temp2 = temp2.reset_index(drop=True)
+#             count1 = temp1.shape[0]
+#             count2 = temp2.shape[0]
+#             count3 = 0
+#             count4 = 0
+#             print(count1, count2,count3,count4)
+#             while (1):
+#                 print('a1')
+#                 if ((count3 == count1 - 1) | (count4 == count2 - 1)):
+#                     print('a2')
+#                     data.loc[(data['check_checkNumber'] == i) & (data['page_pageNumber'] == j) & (
+#                         (data['row_rowNumber'] > temp1.at[count3, 'row_rowNumber']) & (
+#                             data['row_rowNumber'] < temp2.at[temp2.shape[0]-1, 'row_rowNumber'])), 'remittance_result_2'] = 1
+#                     count3=count3+1
+#                     count4=count4+1
+#                 elif ((temp1.at[count3, 'row_rowNumber'] < temp2.at[count4, 'row_rowNumber']) & (
+#                             temp2.at[count4, 'row_rowNumber'] < temp1.at[count3 + 1, 'row_rowNumber'])):
+#                     print('a3')
+#                     data.loc[(data['check_checkNumber'] == i) & (data['page_pageNumber'] == j) & (
+#                         (data['row_rowNumber'] > temp1.at[count3, 'row_rowNumber']) & (
+#                             data['row_rowNumber'] < temp2.at[count4, 'row_rowNumber'])), 'remittance_result_2'] = 1
+#                     count3 = count3 + 1
+#                     count4 = count4 + 1
+#                 elif ((temp1.at[count3, 'row_rowNumber'] < temp2.at[count4, 'row_rowNumber']) & (
+#                             temp2.at[count4, 'row_rowNumber'] > temp1.at[count3 + 1, 'row_rowNumber'])):
+#                     print('a4')
+#                     count3 = count3 + 1
+#                 elif (temp1.at[count3, 'row_rowNumber'] > temp2.at[count4, 'row_rowNumber']):
+#                     print('a5')
+#                     count4 = count4 + 1
+#                 if ((count3 >= count1) | (count4 >= count2)):
+#                     print('a6')
+#                     break
+#
+#
+#
+#
