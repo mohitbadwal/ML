@@ -128,6 +128,11 @@ def totalFlag(x):
 dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image '
                       r'Batches-20171017T131547Z-001\Not_Success_rows_ver_clean.csv',
                       encoding='cp1256')
+
+dataset_test = pd.read_csv(r'D:\backup\PycharmProjects\test\Image '
+                      r'Batches-20171017T131547Z-001\Not_Success_rows_ver_clean.csv',
+                      encoding='cp1256')
+
 s = ""
 is_remit_flag = 0
 is_total_flag = 0
@@ -151,6 +156,7 @@ def last(x):
 
 
 dataset = dataset[dataset['page_type_final'] == 'remittance'].reset_index()
+dataset_test = dataset_test[dataset_test['pred'] == 2 & dataset_test['pred'] == 3].reset_index()
 print(dataset.shape)
 
 # countVectorizer = CountVectorizer(tokenizer=cleanandstem, min_df=50,max_df=0.5, stop_words='english')
@@ -159,6 +165,12 @@ print(dataset.shape)
 dataset['rows'] = dataset['page_noOfRows'] - dataset['row_rowNumber']
 dataset['total'] = dataset.apply(totalFlag, axis=1)
 dataset = last(dataset)
+
+
+dataset_test['rows'] = dataset['page_noOfRows'] - dataset['row_rowNumber']
+dataset['total'] = dataset.apply(totalFlag, axis=1)
+dataset = last(dataset)
+
 tfidf = TfidfVectorizer(tokenizer=cleanandstem, min_df=100, stop_words='english', vocabulary=
 {'total', 'totals', 'grand', 'check'})
 theString = tfidf.fit_transform(dataset['row_string'])
