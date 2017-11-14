@@ -111,7 +111,7 @@ def totalFlag(x):
     # if gh == 0:
     if pattern.fullmatch(s) is not None:
         if re.search('(gross)', s) is None and re.search('(render)', s) is None \
-                and re.search('(comm(\s)?%)|(com(\s)?%)', s) is None:
+                and re.search('(comm(\s)?%)|(com(\s)?%)|(comm(ission)?)', s) is None:
             if gh != 0:
                 return 1
             else:
@@ -130,7 +130,7 @@ dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image '
                       encoding='cp1256')
 
 dataset_test = pd.read_csv(r'D:\backup\PycharmProjects\test\Image '
-                           r'Batches-20171017T131547Z-001\test_data_merged_row_level.csv',
+                           r'Batches-20171017T131547Z-001\test_data_merged_row_level_3_class.csv',
                            encoding='cp1256')
 
 s = ""
@@ -154,9 +154,11 @@ def last(x):
                 print(x.loc[i - 1]['row_isLastRow'])
     return x
 
+ind1 = dataset[dataset['page_type_final'] == 'remittance'].index
+ind2 = dataset_test[(dataset_test['pred'] == 2)].index
 
 dataset = dataset[dataset['page_type_final'] == 'remittance'].reset_index()
-dataset_test = dataset_test[(dataset_test['pred'] == 2) | (dataset_test['pred'] == 3)].reset_index()
+dataset_test = dataset_test[(dataset_test['pred'] == 2)].reset_index()
 print(dataset.shape)
 
 # countVectorizer = CountVectorizer(tokenizer=cleanandstem, min_df=50,max_df=0.5, stop_words='english')
@@ -212,7 +214,7 @@ def func(x):
     return x['is_total_final']
 
 
-rfc = MLPClassifier(hidden_layer_sizes=(100, 100), activation='relu')
+rfc = RandomForestClassifier(n_estimators=200)
 rfc.fit(X, Y)
 # print(rfc.feature_importances_)
 predictions = rfc.predict(X_test)
@@ -226,7 +228,7 @@ det['pred'] = det.apply(func, axis=1)
 
 a4 = pd.DataFrame(data=predictions, columns=['predictions'])
 df = pd.concat([dataset_test,det['is_total_final']], axis=1)
-df.to_csv("toKamal-1.4.csv")
+df.to_csv("toKamal-1.3_not.csv")
 
 '''
 ([$]?[0-9]*[\,]?[0-9]*[\.]?[0-9]+)|(.*((total)(s)?|(amount)).*([$]?([0-9]*[\,]?[0-9]*[\.]?[0-9]+)))

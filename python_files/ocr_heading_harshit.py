@@ -60,11 +60,11 @@ import seaborn as sb
 import string
 from sklearn.naive_bayes import MultinomialNB,GaussianNB
 from sklearn.linear_model import SGDClassifier
-dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image Batches-20171017T131547Z-001\python_files'
-                      r'\toKamal-1.4.csv',
+dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image '
+                      r'Batches-20171017T131547Z-001\Not_Success_rows_ver_clean.csv',
                       encoding='cp1256')
-dataset_test = pd.read_csv(r'D:\backup\PycharmProjects\test\Image Batches-20171017T131547Z-001'
-                           r'\test_data_merged_row_level.csv',
+dataset_test = pd.read_csv(r'D:\backup\PycharmProjects\test\Image Batches-20171017T131547Z-001\python_files'
+                      r'\toKamal-1.3_not.csv',
                       encoding='cp1256')
 dataset['sub1'] = dataset.check_noOfPages - dataset.page_pageNumber
 dataset.sub1 = dataset.sub1.apply(lambda x: 0 if x<0 else x)
@@ -319,5 +319,5 @@ rf.fit(df_new[vocab2], label)
 pred = rf.predict(df_new_test[vocab2])
 er = pd.DataFrame({"is_heading":pred})
 dataset_test = pd.concat([dataset_test,er],axis=1)
-dataset_test.to_csv("toKamal-1.4.csv")
+dataset_test.to_csv("toKamal-1.3_not.csv")
 #pred = rf.predict(df_new[vocab2])
