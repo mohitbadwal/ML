@@ -42,8 +42,6 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.feature_extraction.text import CountVectorizer
 from scipy.sparse import hstack
-import xgboost as xgb
-from xgboost.sklearn import XGBClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_selection import SelectKBest
@@ -62,11 +60,16 @@ import seaborn as sb
 import string
 from sklearn.naive_bayes import MultinomialNB,GaussianNB
 from sklearn.linear_model import SGDClassifier
-dataset = pd.read_csv(r'C:\Users\harshit.karnata.NOTEBOOK436.000\Desktop\Not_Success_rows_ver_clean.csv',
+dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image Batches-20171017T131547Z-001\python_files'
+                      r'\toKamal-1.4.csv',
                       encoding='cp1256')
-dataset = dataset[(dataset.page_type_final =='remittance')]
+dataset_test = pd.read_csv(r'D:\backup\PycharmProjects\test\Image Batches-20171017T131547Z-001'
+                           r'\test_data_merged_row_level.csv',
+                      encoding='cp1256')
 dataset['sub1'] = dataset.check_noOfPages - dataset.page_pageNumber
 dataset.sub1 = dataset.sub1.apply(lambda x: 0 if x<0 else x)
+
+
 
 def getAlphaNumRatio(x):
     digits = sum(c.isdigit() for c in x)
@@ -271,6 +274,11 @@ def func(df_c):
 
 dataset['row_string_new'] = dataset['row_string'].apply(cleaning)
 df_new = func(dataset)
+
+dataset_test['row_string_new'] = dataset_test['row_string'].apply(cleaning)
+df_new_test = func(dataset_test)
+
+
 vocab2 = ['discount',
           'net am',
           #'net pa',
@@ -301,27 +309,15 @@ vocab2 = ['discount',
           ]
 label = df_new['is_heading']
 df_new['row_numberAlphaRatio'] = df_new['row_string_new'].apply(getAlphaNumRatio)
-train_features, test_features, train_labels, test_labels = train_test_split(df_new, label, test_size=0.2,random_state= 20)
+df_new_test['row_numberAlphaRatio'] = df_new_test['row_string_new'].apply(getAlphaNumRatio)
+
 rf=RandomForestClassifier(n_estimators=100,random_state=42,min_samples_split=10)
 #rf =MLPClassifier()
 #rf=SGDClassifier(penalty="l2",alpha=0.0001)
 #rf = MultinomialNB(alpha=0.01)
-rf.fit(train_features[vocab2], train_labels)
-pred = rf.predict(test_features[vocab2])
+rf.fit(df_new[vocab2], label)
+pred = rf.predict(df_new_test[vocab2])
+er = pd.DataFrame({"is_heading":pred})
+dataset_test = pd.concat([dataset_test,er],axis=1)
+dataset_test.to_csv("toKamal-1.4.csv")
 #pred = rf.predict(df_new[vocab2])
-print(rf.feature_importances_)
-print(classification_report(test_labels, pred))
-print(confusion_matrix(test_labels, pred))
-#print(classification_report(label, pred))
-#print(confusion_matrix(label, pred))
-f=0
-#for i in range(0,df_new.shape[0]):
-#    if(label.values[i]!=pred[i]):
-#        print(df_new['row_string_new'].values[i]," ",label.values[i]," ",pred[i])
-#        f=f+1
-for i in range(0,test_features.shape[0]):
-    if(test_labels.values[i]!=pred[i]):
-        print(test_features['row_string_new'].values[i]," ",test_labels.values[i]," ",pred[i])
-        f=f+1
-print(f)
-#print(rf.feature_importances_)
