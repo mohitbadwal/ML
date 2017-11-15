@@ -1,4 +1,5 @@
 import string
+import sys
 import re
 import pandas as pd
 from sklearn import model_selection
@@ -12,6 +13,13 @@ from sklearn.neighbors import KNeighborsClassifier
 
 # this function is used to remove punctuations marks and also removes stop words like 'the' , 'a' ,'an'
 from sklearn.neural_network import MLPClassifier
+
+if len(sys.argv) == 3:
+    train_file = sys.argv[1]
+    test_file = sys.argv[2]
+else:
+    print("Format python filename train_dataset_path test_dataset_path")
+    sys.exit(1)
 
 
 def cleaning(sentence):
@@ -74,15 +82,15 @@ def isNumber(s, e):
     # print(len(er1),li)
     for j in range(0, len(er1)):
         li.pop(er1[j])
-    print(er, er1, i)
+    # print(er, er1, i)
     if i == 1:
         f = 0
         for x in er:
-            print("printing", x, e)
+            #print("printing", x, e)
             if convertNumber(x) >= 0:  # int(float(e)):
                 gh = 5
                 # li = li[:f]
-                print("here", e)
+                #print("here", e)
                 li.append(x)
                 f = 1
                 break
@@ -114,15 +122,15 @@ def secondChance(s, e):
     # print(len(er1),li)
     for j in range(0, len(er1)):
         li.pop(er1[j])
-    print(er, er1, i)
+    # print(er, er1, i)
     if i == 1:
         f = 0
         for x in er:
-            print("printing", x, e)
+            # print("printing", x, e)
             if convertNumber(x) == int(float(e)):
                 gh = 5
                 # li = li[:f]
-                print("here", e)
+                # print("here", e)
                 li.append(x)
                 f = 1
                 break
@@ -145,9 +153,9 @@ def totalFlag(x):
     eddd = cleaning_new(d)
     e = x['check_checkAmount']
     s = str(eddd).lower().strip()
-    print(s)
+    # print(s)
     s, gh = isNumber(s, e)
-    print(s)
+    # print(s)
     # if gh == 0:
     if pattern.fullmatch(s) is not None:
         if re.search('(gross)', s) is None and re.search('(render)', s) is None \
@@ -185,9 +193,8 @@ def afterPred(x):
     return x['pred']
 
 
-dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image '
-                      r'Batches-20171017T131547Z-001\Not_Success_rows_ver_clean.csv',
-                      encoding='cp1256')
+dataset = pd.read_csv(train_file, encoding='cp1256')
+dataset_test = pd.read_csv(test_file, encoding='cp1256')
 s = ""
 is_remit_flag = 0
 is_total_flag = 0
@@ -206,12 +213,13 @@ def last(x):
             if x.loc[i]['page_noOfRows'] > 3:
                 x.loc[i - 1, 'row_isLastRow'] = 1
                 x.loc[i - 2, 'row_isLastRow'] = 1
-                print(x.loc[i - 1]['row_isLastRow'])
+                # print(x.loc[i - 1]['row_isLastRow'])
     return x
 
 
 dataset = dataset[dataset['page_type_final'] == 'remittance'].reset_index()
 print(dataset.shape)
+print(dataset_test.shape)
 
 # countVectorizer = CountVectorizer(tokenizer=cleanandstem, min_df=50,max_df=0.5, stop_words='english')
 # theString = countVectorizer.fit_transform(dataset['row_string'])
@@ -219,6 +227,11 @@ print(dataset.shape)
 dataset['rows'] = dataset['page_noOfRows'] - dataset['row_rowNumber']
 dataset['total'] = dataset.apply(totalFlag, axis=1)
 dataset = last(dataset)
+
+dataset_test['rows'] = dataset_test['page_noOfRows'] - dataset_test['row_rowNumber']
+dataset_test['total'] = dataset_test.apply(totalFlag, axis=1)
+dataset_test = last(dataset_test)
+
 tfidf = TfidfVectorizer(tokenizer=cleanandstem, min_df=100, stop_words='english', vocabulary=
 {'totals',
  # 'totals',
@@ -232,6 +245,15 @@ theString = tfidf.fit_transform(dataset['row_string'])
 combine1 = pd.DataFrame(theString.todense())
 combine1.columns = tfidf.get_feature_names()
 print(combine1.columns)
+
+theTestString = tfidf.transform(dataset_test['row_string'])
+# from sklearn.externals import joblib
+# joblib.dump(tfidf,"tfidf_ocr_total.pkl")
+# tfidf = joblib.load("tfidf_ocr_total.pkl")
+
+combine2 = pd.DataFrame(theTestString.todense())
+combine2.columns = tfidf.get_feature_names()
+
 X = dataset.loc[:, [  # 'row_distanceFromTop',
     # 'row_isLastRow',
     'total',
@@ -241,18 +263,20 @@ X = dataset.loc[:, [  # 'row_distanceFromTop',
     'check_checkAmount']]
 X = pd.concat([combine1.reset_index(drop=True), X.reset_index(drop=True)], axis=1, ignore_index=True)
 Y = dataset.loc[:, 'is_total_final']
-validation_size = 0.2
-seed = 20
-X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
-                                                                                )  # random_state=seed)
-# X_validation = X_validation.iloc[:, :-1]
-X_train = X_train.iloc[:, :-2]
-er = X_validation.iloc[:, -2]
-ch = X_validation.iloc[:, -1]
-X_validation = X_validation.iloc[:, :-2]
 
+X_test = dataset_test.loc[:, [  # 'row_distanceFromTop',
+    # 'row_isLastRow',
+    'total',
+    'rows',
+    'row_string',
+    'check_checkAmount']]
+X_test = pd.concat([combine2.reset_index(drop=True), X_test.reset_index(drop=True)], axis=1, ignore_index=True)
 
-# Y_validation = Y_validation.iloc[-10:-9]
+X = X.iloc[:, :-2]
+er = X_test.iloc[:, -2]
+ch = X_test.iloc[:, -1]
+X_test = X_test.iloc[:, :-2]
+
 
 def func(x):
     if x['total'] == 1 and x['pred_proba_0'] < 0.88 and x['pred'] == 0:
@@ -260,33 +284,25 @@ def func(x):
     return x['pred']
 
 
-rfc = MLPClassifier(hidden_layer_sizes=(100, 100), activation='logistic')
-rfc.fit(X_train, Y_train)
+rfc = MLPClassifier(hidden_layer_sizes=(100, 100))
+rfc.fit(X, Y)
 # print(rfc.feature_importances_)
-predictions = rfc.predict(X_validation)
-predictions_prob = rfc.predict_proba(X_validation)
+predictions = rfc.predict(X_test)
+predictions_prob = rfc.predict_proba(X_test)
 pred_prob = pd.DataFrame(data=predictions_prob, columns=[0, 1])
-det = pd.DataFrame({"str": er.values, "check_amount": ch.values, "y_val": Y_validation.copy(deep=False).values, "total":
-    X_validation.copy(deep=False).iloc[:, -2].values, "pred": predictions, "pred_proba_0": pred_prob[0],
+det = pd.DataFrame({"str": er.values, "check_amount": ch.values, "total":
+    X_test.copy(deep=False).iloc[:, -2].values, "pred": predictions, "pred_proba_0": pred_prob[0],
                     "pred_proba_1": pred_prob[1]})
 
 det['pred'] = det.apply(func, axis=1)
 det['pred'] = det.apply(afterPred, axis=1)
+dataset_test['is_total'] = det['pred']
+dataset_test.to_csv(test_file)
+# det.to_csv("det1.csv")
+# a4 = pd.DataFrame(data=predictions, columns=['predictions'])
+# df = pd.concat([er.reset_index(), det['y_val'], det['pred']], axis=1)
+# df.to_csv("wer.csv")
 
-det.to_csv("det1.csv")
-a4 = pd.DataFrame(data=predictions, columns=['predictions'])
-df = pd.concat([er.reset_index(), det['y_val'], det['pred']], axis=1)
-df.to_csv("wer.csv")
-
-print(accuracy_score(det['y_val'], det['pred']))
-print(confusion_matrix(det['y_val'], det['pred']))
-print(classification_report(det['y_val'], det['pred']))
-
-print(accuracy_score(Y_validation, X_validation.iloc[:, -2].values))
-print(confusion_matrix(Y_validation, X_validation.iloc[:, -2].values))
-print(classification_report(Y_validation, X_validation.iloc[:, -2].values))
-dataset[dataset['is_total_final'] != dataset['total']].loc[:, ['row_index', 'row_string', 'is_total_final', 'total']] \
-    .to_csv('ocr_no_match.csv')
 
 '''
 ([$]?[0-9]*[\,]?[0-9]*[\.]?[0-9]+)|(.*((total)(s)?|(amount)).*([$]?([0-9]*[\,]?[0-9]*[\.]?[0-9]+)))
