@@ -132,7 +132,7 @@ def func(df_c):
         #else:
         #    df_c['description'].values[i] = 1
 
-        if (re.search('[a-z]*((discount)|(disc )|(description)|(desc ))[a-z]*', df_c['row_string_new'].values[i]) == None):
+        if (re.search('[a-z]*((discount)|(disc )|(description)|(desc )|((vendor|vend) id)|((vendor|vend) ref)|((vendor|vend) (no|nbr|nhr|number))|((invoice .*){2,})|(amount[a-z|.|\s]*amount))[a-z]*', df_c['row_string_new'].values[i]) == None):
             df_c['discount'].values[i] = 0
         else:
             df_c['discount'].values[i] = 1
@@ -185,7 +185,9 @@ def func(df_c):
         else:
             df_c['inv am'].values[i] = 1
 
-        if (re.search('[a-z]*((inv no)|(invoice no)|(invoice numb)|(inv numb)|(invno)|(invoiceno)|(invoicenumb)|(invnumb)|(item(\s)?n))[a-z]*', df_c['row_string_new'].values[i]) == None):
+
+
+        if (re.search('[a-z]*((inv (no|nbr|nhr))|(invoice (no|nbr|nhr))|(invoice numb)|(inv numb)|(inv(no|nbr|nhr))|(invoice(no|nbr|nhr))|(invoicenumb)|(invnumb)|(item(\s)?n))[a-z]*', df_c['row_string_new'].values[i]) == None):
             df_c['inv n'].values[i] = 0
         else:
             df_c['inv n'].values[i] = 1
@@ -257,10 +259,10 @@ def func(df_c):
         else:
             df_c['effective'].values[i] = 1
 
-        #if (re.search('[a-z]*(vend)[a-z]*', df_c['row_string_new'].values[i]) == None):
-        #    df_c['vendor'].values[i] = 0
-        #else:
-        #    df_c['vendor'].values[i] = 1
+        if (re.search('[a-z]*(((vendor|vend) id)|((vendor|vend) ref)|((vendor|vend) (no|nbr|nhr|number)))[a-z]*', df_c['row_string_new'].values[i]) == None):
+            df_c['vendor'].values[i] = 0
+        else:
+            df_c['vendor'].values[i] = 1
 
         #if re.search('[a-z]*(debit credit)[a-z]*', df_c['row_string_new'].values[i]) == None:
         #    df_c['debit credit'].values[i] = 0
@@ -296,16 +298,20 @@ vocab2 = ['discount',
           'gross am',
           'row_numberAlphaRatio',
           'row_distanceFromTop',
+          #'page_pageCoordinates_top',
           'row_rowNumber',
           #'sub1'
           ]
 label = df_new['is_heading']
 df_new['row_numberAlphaRatio'] = df_new['row_string_new'].apply(getAlphaNumRatio)
+df_new['page_pageCoordinates_top'] = df_new['page_pageCoordinates_top'].apply(lambda x: 0 if x<50 else 1)
 train_features, test_features, train_labels, test_labels = train_test_split(df_new, label, test_size=0.2,random_state= 20)
-rf=RandomForestClassifier(n_estimators=100,random_state=42,min_samples_split=10)
+rf=RandomForestClassifier(n_estimators=100,min_samples_split=10)
+#rf=DecisionTreeClassifier(min_samples_split=10)
 #rf =MLPClassifier()
 #rf=SGDClassifier(penalty="l2",alpha=0.0001)
 #rf = MultinomialNB(alpha=0.01)
+#rf = XGBClassifier()
 rf.fit(train_features[vocab2], train_labels)
 pred = rf.predict(test_features[vocab2])
 #pred = rf.predict(df_new[vocab2])
