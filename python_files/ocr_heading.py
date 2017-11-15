@@ -6,11 +6,13 @@ from sklearn import model_selection
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
-from sklearn.neural_network import MLPClassifier
 
 dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image '
                       r'Batches-20171017T131547Z-001\Not_Success_rows_ver_clean.csv',
                       encoding='cp1256')
+test_dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image Batches-20171017T131547Z-001\Success_rows3.csv',
+                           encoding='cp1256')
+test_dataset['row_ert'] = test_dataset['row_string']
 dataset = dataset[dataset['page_type_final'] == 'remittance'].reset_index()
 print(dataset.shape)
 
@@ -83,8 +85,8 @@ def funcRegEx(e):
             if ratio == 1:
                 if additionalCheck(str(x).lower().strip()):
                     # if checkHead(dataset, e['rowIndex']-1):
-                    if ratio != e['is_heading']:
-                        print(ratio, str(x), e['is_heading'])
+                    # if ratio != e['is_heading']:
+                    #     print(ratio, str(x), e['is_heading'])
                     return 1
                     # else:
                     # return 0
@@ -179,10 +181,15 @@ def checkHeading(dataset1):
 dataset['row_string'] = dataset['row_string'].apply(cleaning_new)
 dataset['row_numberAlphaRatio'] = dataset['row_string'].apply(getAlphaNumRatio)
 dataset['heading'] = dataset.apply(funcRegEx, axis=1)
+test_dataset['row_string'] = test_dataset['row_string'].apply(cleaning_new)
+test_dataset['row_numberAlphaRatio'] = test_dataset['row_string'].apply(getAlphaNumRatio)
+test_dataset['heading'] = test_dataset.apply(funcRegEx, axis=1)
+
 # print(dataset['row_numberAlphaRatio'].isnull().sum())
 # dataset = checkHeading(dataset)
-tfidf = CountVectorizer(tokenizer=cleanandstem, min_df=100, stop_words='english', ngram_range=(1, 2),
+tfidf = CountVectorizer(tokenizer=cleanandstem, min_df=5, stop_words='english',  # ngram_range=(1, 2),
                         vocabulary=['invoice', 'policy', 'net', 'paid', 'document',
+
                                     'discount', 'inv'])
 theString = tfidf.fit_transform(dataset['row_string'])
 # a = theString.toarray()
@@ -190,9 +197,12 @@ theString = tfidf.fit_transform(dataset['row_string'])
 # df_temp = pd.concat([dataset['row_index'],dataset['row_string'], dataset['is_remittance_final'], dataset['is_total_final'],
 #                    dataset['is_heading'], df_temp], axis=1)
 # df_temp.to_csv("term.csv")
+testString = tfidf.transform(test_dataset['row_string'])
 combine1 = pd.DataFrame(theString.todense())
 combine1.columns = tfidf.get_feature_names()
 print(combine1.columns)
+combine2 = pd.DataFrame(testString.todense())
+combine2.columns = tfidf.get_feature_names()
 X = dataset.loc[:, ['row_rowNumber',
                     'heading',
                     'row_numberAlphaRatio',
@@ -200,13 +210,34 @@ X = dataset.loc[:, ['row_rowNumber',
                     ]]
 X = pd.concat([combine1.reset_index(drop=True), X.reset_index(drop=True)], axis=1, ignore_index=True)
 Y = dataset.loc[:, 'is_heading']
+X = X.iloc[:, :-1]
+X1 = test_dataset.loc[:, ['row_rowNumber',
+                          'heading',
+                          'row_numberAlphaRatio',
+                          ]]
+X1 = pd.concat([combine2.reset_index(drop=True), X1.reset_index(drop=True)], axis=1, ignore_index=True)
+rfc = RandomForestClassifier(n_estimators=200, )
+rfc.fit(X, Y)
+predictions = rfc.predict(X1)
+predictions_prob = rfc.predict_proba(X1)
+test_dataset['row_string'] = test_dataset['row_ert']
+test_dataset['is_heading'] = pd.DataFrame(data=predictions)
+test_dataset.to_csv("test.csv")
+
+'''
+Y = dataset.loc[:, 'is_heading']
 validation_size = 0.2
 seed = 20
 X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
+<<<<<<< Updated upstream
+                                                                                random_state=seed)
+=======
                                                                                   random_state=seed)
+>>>>>>> Stashed changes
 
+r = X_validation.iloc[:, -1]
 X_train = X_train.iloc[:, :-1]
-r = X_validation.iloc[:,-1]
+
 X_validation = X_validation.iloc[:, :-1]
 
 
@@ -216,13 +247,13 @@ def func(x):
     return x['pred']
 
 
-rfc = MLPClassifier(hidden_layer_sizes=(100, 100), activation='relu')
+rfc = RandomForestClassifier(n_estimators=200, )
 rfc.fit(X_train, Y_train)
 predictions = rfc.predict(X_validation)
 predictions_prob = rfc.predict_proba(X_validation)
-# print(X.columns, rfc.feature_importances_)
+print(X.columns, rfc.feature_importances_)
 pred_prob = pd.DataFrame(data=predictions_prob, columns=[0, 1])
-det = pd.DataFrame({"str":r.values,"y_val": Y_validation.copy(deep=False).values, "total":
+det = pd.DataFrame({"y_val": Y_validation.copy(deep=False).values, "total":
     X_validation.copy(deep=False).iloc[:, -2].values, "pred": predictions, "pred_proba_0": pred_prob[0],
                     "pred_proba_1": pred_prob[1]})
 det['pred'] = det.apply(func, axis=1)
@@ -236,5 +267,6 @@ print(accuracy_score(Y_validation, X_validation.iloc[:, -2].values))
 print(confusion_matrix(Y_validation, X_validation.iloc[:, -2].values))
 print(classification_report(Y_validation, X_validation.iloc[:, -2].values))
 
-dataset[dataset['is_heading'] != dataset['heading']].loc[:, ['row_string', 'is_heading', 'heading']] \
-    .to_csv('ocr_heading.csv')
+dataset[dataset['is_heading'] != dataset['heading']].loc[:, ['row_string', 'is_heading', 'heading']]
+.to_csv('ocr_heading.csv')
+'''

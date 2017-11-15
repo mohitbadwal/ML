@@ -111,7 +111,7 @@ def totalFlag(x):
     # if gh == 0:
     if pattern.fullmatch(s) is not None:
         if re.search('(gross)', s) is None and re.search('(render)', s) is None \
-                and re.search('(comm(\s)?%)|(com(\s)?%)',s) is None:
+                and re.search('(comm(\s)?%)|(com(\s)?%)|(comm(ission)?)', s) is None:
             if gh != 0:
                 return 1
             else:
@@ -128,6 +128,11 @@ def totalFlag(x):
 dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image '
                       r'Batches-20171017T131547Z-001\Not_Success_rows_ver_clean.csv',
                       encoding='cp1256')
+
+dataset_test = pd.read_csv(r'D:\backup\PycharmProjects\test\Image '
+                           r'Batches-20171017T131547Z-001\Success_rows3.csv',
+                           encoding='cp1256')
+
 s = ""
 is_remit_flag = 0
 is_total_flag = 0
@@ -149,8 +154,13 @@ def last(x):
                 print(x.loc[i - 1]['row_isLastRow'])
     return x
 
+ind1 = dataset[dataset['page_type_final'] == 'remittance'].index
+# ind2 = dataset_test[(dataset_test['pred'] == 2)].index
 
 dataset = dataset[dataset['page_type_final'] == 'remittance'].reset_index()
+dataset_test['row_ert'] = dataset_test['row_string']
+
+# dataset_test = dataset_test[(dataset_test['pred'] == 2)].reset_index()
 print(dataset.shape)
 
 # countVectorizer = CountVectorizer(tokenizer=cleanandstem, min_df=50,max_df=0.5, stop_words='english')
@@ -159,15 +169,24 @@ print(dataset.shape)
 dataset['rows'] = dataset['page_noOfRows'] - dataset['row_rowNumber']
 dataset['total'] = dataset.apply(totalFlag, axis=1)
 dataset = last(dataset)
+
+dataset_test['rows'] = dataset_test['page_noOfRows'] - dataset_test['row_rowNumber']
+dataset_test['total'] = dataset_test.apply(totalFlag, axis=1)
+dataset_test = last(dataset_test)
+
 tfidf = TfidfVectorizer(tokenizer=cleanandstem, min_df=100, stop_words='english', vocabulary=
 {'total', 'totals', 'grand', 'check'})
 theString = tfidf.fit_transform(dataset['row_string'])
 # from sklearn.externals import joblib
 # joblib.dump(tfidf,"tfidf_ocr_total.pkl")
 # tfidf = joblib.load("tfidf_ocr_total.pkl")
+theTestString = tfidf.transform(dataset_test['row_string'])
 
 combine1 = pd.DataFrame(theString.todense())
 combine1.columns = tfidf.get_feature_names()
+
+combine2 = pd.DataFrame(theTestString.todense())
+combine2.columns = tfidf.get_feature_names()
 print(combine1.columns)
 X = dataset.loc[:, [  # 'row_distanceFromTop',
     'rows',
@@ -176,49 +195,47 @@ X = dataset.loc[:, [  # 'row_distanceFromTop',
     'row_string']]
 X = pd.concat([combine1.reset_index(drop=True), X.reset_index(drop=True)], axis=1, ignore_index=True)
 Y = dataset.loc[:, 'is_total_final']
-validation_size = 0.2
-seed = 20
-X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
-                                                                                random_state=seed)
-# X_validation = X_validation.iloc[:, :-1]
-X_train = X_train.iloc[:, :-1]
-er = X_validation.iloc[:, -1]
-X_validation = X_validation.iloc[:, :-1]
+
+X_test = dataset_test.loc[:, [  # 'row_distanceFromTop',
+    'rows',
+    'total',
+    'row_isLastRow',
+    'row_string']]
+X_test = pd.concat([combine2.reset_index(drop=True), X_test.reset_index(drop=True)], axis=1, ignore_index=True)
+
+X = X.iloc[:, :-1]
+er = X_test.iloc[:, -1]
+X_test = X_test.iloc[:, :-1]
 
 
 # Y_validation = Y_validation.iloc[-10:-9]
 # TODO: Get func(x) in export branch for combining the regex model with ML model
 def func(x):
-    if x['total'] == 1 and x['pred_proba_0'] < 0.88 and x['pred'] == 0:
+    if x['total'] == 1 and x['pred_proba_0'] < 0.88 and x['is_total_final'] == 0:
         return 1
-    return x['pred']
+    return x['is_total_final']
 
 
-rfc = MLPClassifier(hidden_layer_sizes=(100, 100), activation='relu')
-rfc.fit(X_train, Y_train)
+rfc = RandomForestClassifier(n_estimators=200)
+rfc.fit(X, Y)
 # print(rfc.feature_importances_)
-predictions = rfc.predict(X_validation)
-predictions_prob = rfc.predict_proba(X_validation)
+predictions = rfc.predict(X_test)
+predictions_prob = rfc.predict_proba(X_test)
+dataset_test['row_string'] = dataset_test['row_ert']
+dataset_test['is_total'] = pd.DataFrame(data=predictions)
+dataset_test.to_csv("test.csv")
+'''
 pred_prob = pd.DataFrame(data=predictions_prob, columns=[0, 1])
-det = pd.DataFrame({"str":er.values,"y_val": Y_validation.copy(deep=False).values, "total":
-    X_validation.copy(deep=False).iloc[:, -2].values, "pred": predictions, "pred_proba_0": pred_prob[0],
+det = pd.DataFrame({"str": er.values, "total":
+    X_test.copy(deep=False).iloc[:, -2].values, "is_total_final": predictions, "pred_proba_0": pred_prob[0],
                     "pred_proba_1": pred_prob[1]})
 det.to_csv("det1.csv")
 det['pred'] = det.apply(func, axis=1)
 
 a4 = pd.DataFrame(data=predictions, columns=['predictions'])
-df = pd.concat([er.reset_index(), det['y_val'], det['pred']], axis=1)
-df.to_csv("wer.csv")
-
-print(accuracy_score(det['y_val'], det['pred']))
-print(confusion_matrix(det['y_val'], det['pred']))
-print(classification_report(det['y_val'], det['pred']))
-
-print(accuracy_score(Y_validation, X_validation.iloc[:, -2].values))
-print(confusion_matrix(Y_validation, X_validation.iloc[:, -2].values))
-print(classification_report(Y_validation, X_validation.iloc[:, -2].values))
-dataset[dataset['is_total_final'] != dataset['total']].loc[:, ['row_index', 'row_string', 'is_total_final', 'total']] \
-    .to_csv('ocr_no_match.csv')
+df = pd.concat([dataset_test,det['is_total_final']], axis=1)
+df.to_csv("test.csv")
+'''
 
 '''
 ([$]?[0-9]*[\,]?[0-9]*[\.]?[0-9]+)|(.*((total)(s)?|(amount)).*([$]?([0-9]*[\,]?[0-9]*[\.]?[0-9]+)))
