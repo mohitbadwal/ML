@@ -185,6 +185,8 @@ def func(df_c):
         else:
             df_c['inv am'].values[i] = 1
 
+
+
         if (re.search('[a-z]*((inv (no|nbr|nhr))|(invoice (no|nbr|nhr))|(invoice numb)|(inv numb)|(inv(no|nbr|nhr))|(invoice(no|nbr|nhr))|(invoicenumb)|(invnumb)|(item(\s)?n))[a-z]*', df_c['row_string_new'].values[i]) == None):
             df_c['inv n'].values[i] = 0
         else:
