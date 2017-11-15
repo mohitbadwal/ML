@@ -174,17 +174,15 @@ def afterPred(x):
     if x['pred'] == 0 and x['total'] == 0:
         eddd = str(x['str'])
         e = x['check_amount']
-        eddd=cleaning_new(eddd)
+        eddd = cleaning_new(eddd)
         s = str(eddd).lower().strip()
-       # if re.search('(statement)',s) is None:
+        # if re.search('(statement)',s) is None:
         s, gh_second = secondChance(s, e)
         if gh_second != 0:
             return 1
         else:
             return 0
     return x['pred']
-
-
 
 
 dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image '
@@ -244,9 +242,9 @@ X = dataset.loc[:, [  # 'row_distanceFromTop',
 X = pd.concat([combine1.reset_index(drop=True), X.reset_index(drop=True)], axis=1, ignore_index=True)
 Y = dataset.loc[:, 'is_total_final']
 validation_size = 0.2
-seed = 50
+seed = 20
 X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
-                                                                                 random_state=seed)
+                                                                                )  # random_state=seed)
 # X_validation = X_validation.iloc[:, :-1]
 X_train = X_train.iloc[:, :-2]
 er = X_validation.iloc[:, -2]
@@ -262,9 +260,9 @@ def func(x):
     return x['pred']
 
 
-rfc = RandomForestClassifier(n_estimators=200)
+rfc = MLPClassifier(hidden_layer_sizes=(100, 100), activation='logistic')
 rfc.fit(X_train, Y_train)
-print(rfc.feature_importances_)
+# print(rfc.feature_importances_)
 predictions = rfc.predict(X_validation)
 predictions_prob = rfc.predict_proba(X_validation)
 pred_prob = pd.DataFrame(data=predictions_prob, columns=[0, 1])
@@ -273,7 +271,7 @@ det = pd.DataFrame({"str": er.values, "check_amount": ch.values, "y_val": Y_vali
                     "pred_proba_1": pred_prob[1]})
 
 det['pred'] = det.apply(func, axis=1)
-det['pred'] = det.apply(afterPred,axis=1)
+det['pred'] = det.apply(afterPred, axis=1)
 
 det.to_csv("det1.csv")
 a4 = pd.DataFrame(data=predictions, columns=['predictions'])
