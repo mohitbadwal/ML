@@ -57,7 +57,7 @@ for i in data['check_checkNumber'].unique():
         first_row = 1
         last_row = temp.at[temp.shape[0] - 1, 'row_rowNumber']
         df = pd.DataFrame()
-        df = temp[temp['is_total'] == 1]
+        df = temp[temp['is_total_final'] == 1]
         if df.empty:
             total_row_number = last_row
         else:
@@ -253,7 +253,7 @@ X_validation = df3[['date_flag', 'amount_col_man', 'ratio_row_section', 'row_noO
                     'total_digits_coded', 'row_JosasisLRCoordinates_left', 'row_JosasisLRCoordinates_right',
                     'row_distanceFromLeft', 'row_distanceFromTop']]
 Y_train = data['is_remittance_final'].reset_index(drop=True)
-Y_validation = df3['is_remittance_final'].reset_index(drop=True)
+Y_validation = df3['is_remittance_final_original'].reset_index(drop=True)
 
 rfc = RandomForestClassifier(n_estimators=300)
 rfc.fit(X_train, Y_train)
