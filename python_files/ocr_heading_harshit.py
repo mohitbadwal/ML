@@ -2,6 +2,7 @@ import pandas as pd
 import calendar
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import BaggingClassifier
@@ -42,8 +43,6 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.feature_extraction.text import CountVectorizer
 from scipy.sparse import hstack
-import xgboost as xgb
-from xgboost.sklearn import XGBClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_selection import SelectKBest
@@ -62,8 +61,17 @@ import seaborn as sb
 import string
 from sklearn.naive_bayes import MultinomialNB,GaussianNB
 from sklearn.linear_model import SGDClassifier
-dataset = pd.read_csv(r'C:\Users\harshit.karnata.NOTEBOOK436.000\Desktop\Not_Success_rows_ver_clean.csv',
+
+if len(sys.argv) == 3:
+    train_file = sys.argv[1]
+    test_file = sys.argv[2]
+else:
+    print("Format python filename train_dataset_path test_dataset_path")
+    sys.exit(1)
+
+dataset = pd.read_csv(train_file,
                       encoding='cp1256')
+dataset_test = pd.read_csv(test_file,encoding='cp1256')
 dataset = dataset[(dataset.page_type_final =='remittance')]
 dataset['sub1'] = dataset.check_noOfPages - dataset.page_pageNumber
 dataset.sub1 = dataset.sub1.apply(lambda x: 0 if x<0 else x)
@@ -273,6 +281,11 @@ def func(df_c):
 
 dataset['row_string_new'] = dataset['row_string'].apply(cleaning)
 df_new = func(dataset)
+
+dataset_test['row_string_new'] = dataset_test['row_string'].apply(cleaning)
+df_test = func(dataset_test)
+
+
 vocab2 = ['discount',
           'net am',
           #'net pa',
@@ -305,29 +318,18 @@ vocab2 = ['discount',
 label = df_new['is_heading']
 df_new['row_numberAlphaRatio'] = df_new['row_string_new'].apply(getAlphaNumRatio)
 df_new['page_pageCoordinates_top'] = df_new['page_pageCoordinates_top'].apply(lambda x: 0 if x<50 else 1)
-train_features, test_features, train_labels, test_labels = train_test_split(df_new, label, test_size=0.2,random_state= 20)
+
+df_test['row_numberAlphaRatio'] = df_test['row_string_new'].apply(getAlphaNumRatio)
+df_test['page_pageCoordinates_top'] = df_test['page_pageCoordinates_top'].apply(lambda x: 0 if x<50 else 1)
+
 rf=RandomForestClassifier(n_estimators=100,min_samples_split=10)
 #rf=DecisionTreeClassifier(min_samples_split=10)
 #rf =MLPClassifier()
 #rf=SGDClassifier(penalty="l2",alpha=0.0001)
 #rf = MultinomialNB(alpha=0.01)
 #rf = XGBClassifier()
-rf.fit(train_features[vocab2], train_labels)
-pred = rf.predict(test_features[vocab2])
-#pred = rf.predict(df_new[vocab2])
-print(rf.feature_importances_)
-print(classification_report(test_labels, pred))
-print(confusion_matrix(test_labels, pred))
-#print(classification_report(label, pred))
-#print(confusion_matrix(label, pred))
-f=0
-#for i in range(0,df_new.shape[0]):
-#    if(label.values[i]!=pred[i]):
-#        print(df_new['row_string_new'].values[i]," ",label.values[i]," ",pred[i])
-#        f=f+1
-for i in range(0,test_features.shape[0]):
-    if(test_labels.values[i]!=pred[i]):
-        print(test_features['row_string_new'].values[i]," ",test_labels.values[i]," ",pred[i])
-        f=f+1
-print(f)
-#print(rf.feature_importances_)
+rf.fit(df_new[vocab2], label)
+pred = rf.predict(df_test[vocab2])
+det = pd.DataFrame({"pred": pred})
+df_test['is_heading'] = det['pred']
+df_test.to_csv(test_file)
