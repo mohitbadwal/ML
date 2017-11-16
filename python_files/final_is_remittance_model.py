@@ -23,25 +23,7 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
 from dateutil.parser import parse
 
 data=pd.read_csv(r"C:\Users\shubham.kamal\Desktop\LITM\Not_Success_rows_ver_clean.csv", sep=',',encoding='cp1256')
-data2=pd.read_csv(r"C:\Users\shubham.kamal\Desktop\LITM\test.csv", sep=',',encoding='cp1256',low_memory=False)
-
-train=pd.DataFrame()
-test=pd.DataFrame()
-count=0
-for i in data['check_checkNumber'].unique():
-    if count<100:
-        test=test.append(data[data['check_checkNumber']==i],ignore_index=True)
-        count=count+1
-    else:
-        train=train.append(data[data['check_checkNumber']==i],ignore_index=True)
-        count=count+1
-
-train=train.reset_index(drop=True)
-test=test.reset_index(drop=True)
-train.to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\train.csv")
-test.to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\test.csv")
-
-
+data2=pd.read_csv(r"C:\Users\shubham.kamal\Desktop\LITM\test_new.csv", sep=',',encoding='cp1256',low_memory=False)
 
 
 data = data[data['page_type_final'] == 'remittance']
@@ -233,7 +215,7 @@ for i in data2['check_checkNumber'].unique():
                     df3=df3.append(temp.iloc[[l]],ignore_index=True)
                 break
 df3=df3.reset_index(drop=True)
-print('df3',df3.shape)
+print('df3 unique',df3['check_checkNumber'].unique().shape)
 vocab=['inst','policy'
 #'lpm',#'pckg'#'construction','bond'
 ]
@@ -314,11 +296,7 @@ for i in range(0,df3.shape[0]):
     s = s.replace(',', '')
     s = s.replace('$', ' ')
     digits=re.findall(r"\s+\d+\.\d+$|\s+\d+\.\d+\s+", s,flags=re.MULTILINE)
-    print(df3.at[i,'row_string'])
-    print(s)
-    print(digits)
     for j in digits:
-        print(j)
         if float(j)<=df3.at[i,'check_checkAmount']:
             df3.at[i,'amount_col_man']=1
             break
@@ -338,18 +316,18 @@ def dateFlag(x):
 data['date_flag'] = data['row_string'].apply(dateFlag)
 df3['date_flag'] = df3['row_string'].apply(dateFlag)
 
-# data['date_amt_combined']=0
-# df3['date_amt_combined']=0
-# data[(data['date_flag']==1) & (data['amount_col_man']==1)]['date_amt_combined']=1
-# data[(data['date_flag']==0) & (data['amount_col_man']==1)]['date_amt_combined']=1
-# data[(data['date_flag']==1) & (data['amount_col_man']==0)]['date_amt_combined']=0
-# data[(data['date_flag']==0) & (data['amount_col_man']==0)]['date_amt_combined']=0
-#
-# df3[(df3['date_flag']==1) & (df3['amount_col_man']==1)]['date_amt_combined']=1
-# df3[(df3['date_flag']==0) & (df3['amount_col_man']==1)]['date_amt_combined']=1
-# df3[(df3['date_flag']==1) & (df3['amount_col_man']==0)]['date_amt_combined']=0
-# df3[(df3['date_flag']==0) & (df3['amount_col_man']==0)]['date_amt_combined']=0
-#
+data['date_amt_combined']=0
+df3['date_amt_combined']=0
+data.loc[(data['date_flag']==1) & (data['amount_col_man']==1),'date_amt_combined']=1
+data.loc[(data['date_flag']==0) & (data['amount_col_man']==1),'date_amt_combined']=1
+data.loc[(data['date_flag']==1) & (data['amount_col_man']==0),'date_amt_combined']=0
+data.loc[(data['date_flag']==0) & (data['amount_col_man']==0),'date_amt_combined']=0
+
+df3.loc[(df3['date_flag']==1) & (df3['amount_col_man']==1),'date_amt_combined']=1
+df3.loc[(df3['date_flag']==0) & (df3['amount_col_man']==1),'date_amt_combined']=1
+df3.loc[(df3['date_flag']==1) & (df3['amount_col_man']==0),'date_amt_combined']=0
+df3.loc[(df3['date_flag']==0) & (df3['amount_col_man']==0),'date_amt_combined']=0
+
 
 
 
@@ -363,71 +341,75 @@ df3['date_flag'] = df3['row_string'].apply(dateFlag)
 # combine2.columns = tfidf.get_feature_names()
 # print(combine2.columns)
 
-X_train=data[['date_flag','amount_col_man','ratio_row_section','row_noOfCharacters','remittance_result','total_digits_coded','total_others_coded','row_JosasisLRCoordinates_left','row_JosasisLRCoordinates_right','row_distanceFromLeft','row_distanceFromTop']]
-X_validation=df3[['date_flag','amount_col_man','ratio_row_section','row_noOfCharacters','remittance_result','total_digits_coded','total_others_coded','row_JosasisLRCoordinates_left','row_JosasisLRCoordinates_right','row_distanceFromLeft','row_distanceFromTop']]
+X_train=data[['date_amt_combined','date_flag','amount_col_man','ratio_row_section','row_noOfCharacters','remittance_result','total_digits_coded','total_others_coded','row_JosasisLRCoordinates_left','row_JosasisLRCoordinates_right','row_distanceFromLeft','row_distanceFromTop']]
+X_validation=df3[['date_amt_combined','date_flag','amount_col_man','ratio_row_section','row_noOfCharacters','remittance_result','total_digits_coded','total_others_coded','row_JosasisLRCoordinates_left','row_JosasisLRCoordinates_right','row_distanceFromLeft','row_distanceFromTop']]
 #,'section_sectionNumber','section_joasisLRCoordinates_left','section_joasisLRCoordinates_right','section_joasisTBCoordinates_bottom','section_joasisTBCoordinates_top','section_noOfCharacters','section_noOfRows'
-voca=['date_flag','amount_col_man','ratio_row_section','row_noOfCharacters','remittance_result','total_digits_coded','total_others_coded','row_JosasisLRCoordinates_left','row_JosasisLRCoordinates_right','row_distanceFromLeft','row_distanceFromTop']
+voca=['date_amt_combined','date_flag','amount_col_man','ratio_row_section','row_noOfCharacters','remittance_result','total_digits_coded','total_others_coded','row_JosasisLRCoordinates_left','row_JosasisLRCoordinates_right','row_distanceFromLeft','row_distanceFromTop']
 #X_train=pd.concat([X_train, combine1.reset_index(drop=True)], axis=1, ignore_index=True)
 #X_validation = pd.concat([X_validation, combine2.reset_index(drop=True)], axis=1, ignore_index=True)
 Y_train = data['is_remittance_final'].reset_index(drop=True)
 Y_validation = df3['is_remittance_final'].reset_index(drop=True)
 
-from sklearn.neural_network import MLPClassifier
-rfc = RandomForestClassifier(n_estimators=200)
+# from sklearn.neural_network import MLPClassifier
+rfc = RandomForestClassifier(n_estimators=300)
 rfc.fit(X_train, Y_train)
 predictions = rfc.predict(X_validation)
 print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
+
+
+
+
 
 
 df3['predictions']=predictions
 #data[['ratio_row_section','row_string','renB_newB','date_boolean']].to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\just_to_check.csv")
-df3=df3[['ratio_row_section','renB_newB','total_digits_coded','total_letters_coded','total_spaces_coded','total_others_coded','total_digits','total_letters','total_spaces','total_others','is_heading','is_total_final','check_checkAmount','check_checkNumber','page_pageNumber','row_rowNumber','row_string','amount_col_man','date_flag','remittance_result','is_remittance_final','predictions','ocr_filepath']]
-df3.to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\final_output2.csv")
+df3=df3[['ratio_row_section','renB_newB','total_digits_coded','total_letters_coded','total_spaces_coded','total_others_coded','total_digits','total_letters','total_spaces','total_others','is_heading','is_total_final','check_checkAmount','check_checkNumber','page_pageNumber','row_rowNumber','row_string','amount_col_man','date_flag','date_amt_combined','remittance_result','is_remittance_final','predictions','ocr_filepath']]
+df3.to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\Not_success_1.csv")
 
-
-validation_size = 0.3
-X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X_train, Y_train, test_size=validation_size)
-
-rfc = RandomForestClassifier(n_estimators=200)
-rfc.fit(X_train, Y_train)
-predictions = rfc.predict(X_validation)
-print(accuracy_score(Y_validation, predictions))
-print(confusion_matrix(Y_validation, predictions))
-print(classification_report(Y_validation, predictions))
-
-
-
-train=pd.DataFrame()
-test=pd.DataFrame()
-count=0
-for i in data['check_checkNumber'].unique():
-    if count<100:
-        test=test.append(data[data['check_checkNumber']==i],ignore_index=True)
-        count=count+1
-    else:
-        train=train.append(data[data['check_checkNumber']==i],ignore_index=True)
-        count=count+1
-
-train=train.reset_index(drop=True)
-test=test.reset_index(drop=True)
-X_train=train[['date_flag','amount_col_man','ratio_row_section','row_noOfCharacters','remittance_result','total_digits_coded','total_others_coded','row_JosasisLRCoordinates_left','row_JosasisLRCoordinates_right','row_distanceFromLeft','row_distanceFromTop']]
-Y_train=train['is_remittance_final']
-X_validation=test[['date_flag','amount_col_man','ratio_row_section','row_noOfCharacters','remittance_result','total_digits_coded','total_others_coded','row_JosasisLRCoordinates_left','row_JosasisLRCoordinates_right','row_distanceFromLeft','row_distanceFromTop']]
-Y_validation=test['is_remittance_final']
-
-rfc = RandomForestClassifier(n_estimators=200)
-rfc.fit(X_train, Y_train)
-predictions = rfc.predict(X_validation)
-print(accuracy_score(Y_validation, predictions))
-print(confusion_matrix(Y_validation, predictions))
-print(classification_report(Y_validation, predictions))
-
-test['predictions']=predictions
-#data[['ratio_row_section','row_string','renB_newB','date_boolean']].to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\just_to_check.csv")
-test=test[['ratio_row_section','renB_newB','total_digits_coded','total_letters_coded','total_spaces_coded','total_others_coded','total_digits','total_letters','total_spaces','total_others','is_heading','is_total_final','check_checkAmount','check_checkNumber','page_pageNumber','row_rowNumber','row_string','amount_col_man','date_flag','remittance_result','is_remittance_final','predictions','ocr_filepath']]
-test.to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\test_100_OCR_Level.csv")
+#
+# validation_size = 0.3
+# X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X_train, Y_train, test_size=validation_size)
+#
+# rfc = RandomForestClassifier(n_estimators=200)
+# rfc.fit(X_train, Y_train)
+# predictions = rfc.predict(X_validation)
+# print(accuracy_score(Y_validation, predictions))
+# print(confusion_matrix(Y_validation, predictions))
+# print(classification_report(Y_validation, predictions))
+#
+#
+#
+# train=pd.DataFrame()
+# test=pd.DataFrame()
+# count=0
+# for i in data['check_checkNumber'].unique():
+#     if count<100:
+#         test=test.append(data[data['check_checkNumber']==i],ignore_index=True)
+#         count=count+1
+#     else:
+#         train=train.append(data[data['check_checkNumber']==i],ignore_index=True)
+#         count=count+1
+#
+# train=train.reset_index(drop=True)
+# test=test.reset_index(drop=True)
+# X_train=train[['date_flag','amount_col_man','ratio_row_section','row_noOfCharacters','remittance_result','total_digits_coded','total_others_coded','row_JosasisLRCoordinates_left','row_JosasisLRCoordinates_right','row_distanceFromLeft','row_distanceFromTop']]
+# Y_train=train['is_remittance_final']
+# X_validation=test[['date_flag','amount_col_man','ratio_row_section','row_noOfCharacters','remittance_result','total_digits_coded','total_others_coded','row_JosasisLRCoordinates_left','row_JosasisLRCoordinates_right','row_distanceFromLeft','row_distanceFromTop']]
+# Y_validation=test['is_remittance_final']
+#
+# rfc = RandomForestClassifier(n_estimators=200)
+# rfc.fit(X_train, Y_train)
+# predictions = rfc.predict(X_validation)
+# print(accuracy_score(Y_validation, predictions))
+# print(confusion_matrix(Y_validation, predictions))
+# print(classification_report(Y_validation, predictions))
+#
+# test['predictions']=predictions
+# #data[['ratio_row_section','row_string','renB_newB','date_boolean']].to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\just_to_check.csv")
+# test=test[['ratio_row_section','renB_newB','total_digits_coded','total_letters_coded','total_spaces_coded','total_others_coded','total_digits','total_letters','total_spaces','total_others','is_heading','is_total_final','check_checkAmount','check_checkNumber','page_pageNumber','row_rowNumber','row_string','amount_col_man','date_flag','remittance_result','is_remittance_final','predictions','ocr_filepath']]
+# test.to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\test_100_OCR_Level.csv")
 
 
 
