@@ -8,10 +8,12 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from sklearn.neighbors import KNeighborsClassifier
 
-
 # what the heeeelll
 
 # this function is used to remove punctuations marks and also removes stop words like 'the' , 'a' ,'an'
+from sklearn.neural_network import MLPClassifier
+
+
 def cleaning(sentence):
     punctuation_removed = [char for char in sentence if char not in string.punctuation]
     punctuation_removed = [char for char in punctuation_removed if char not in string.digits]
@@ -21,7 +23,7 @@ def cleaning(sentence):
 
 
 def cleaning_new(sentence):
-    fd = '?-+:'
+    fd = '?-+:)(;,'
     punctuation_removed = [char for char in sentence if char not in fd]
     punctuation_removed = "".join(punctuation_removed)
     l = [word.lower() for word in punctuation_removed.split()]
@@ -72,13 +74,53 @@ def isNumber(s, e):
     # print(len(er1),li)
     for j in range(0, len(er1)):
         li.pop(er1[j])
-    print(er,er1,i)
+    print(er, er1, i)
     if i == 1:
         f = 0
         for x in er:
-            print("printing",x, e)
+            print("printing", x, e)
+            if convertNumber(x) >= 0:  # int(float(e)):
+                gh = 5
+                # li = li[:f]
+                print("here", e)
+                li.append(x)
+                f = 1
+                break
+        if f == 0:
+            li.append(er[-1])
+        return ' '.join(li), gh
+    else:
+        return s, gh
+
+
+def secondChance(s, e):
+    li = str(s).split(" ")
+    i = 0
+    gh = 0
+    d = 0
+    f = -1
+    er = []
+    er1 = []
+    for x in li:
+        if pattern_number.fullmatch(x) is not None:
+            er.append(x)
+            er1.append(d)
+            i = 1
+            if f == -1:
+                f = d
+        d = d + 1
+
+    er1.sort(reverse=True)
+    # print(len(er1),li)
+    for j in range(0, len(er1)):
+        li.pop(er1[j])
+    print(er, er1, i)
+    if i == 1:
+        f = 0
+        for x in er:
+            print("printing", x, e)
             if convertNumber(x) == int(float(e)):
-                gh = x
+                gh = 5
                 # li = li[:f]
                 print("here", e)
                 li.append(x)
@@ -93,7 +135,7 @@ def isNumber(s, e):
 
 # pattern to match totals
 pattern = re.compile(
-    "([$]?[0-9]*[\,]?[0-9]*[\.][0-9]+)|(.*((total)(s)?|(amount)).*([$]?([0-9]*[\,]?[0-9]*[\.]?[0-9]+)))")
+    "(\^?[$]?[0-9]*[\,]?[0-9]*[\.][0-9]+\$?)|(.*((total)(s)?|(amount)).*([$]?([0-9]*[\,]?[0-9]*[\.][0-9]+)))")
 
 
 # function for transformation of string to identify the possibility of a total according to the regular expression
@@ -108,18 +150,43 @@ def totalFlag(x):
     print(s)
     # if gh == 0:
     if pattern.fullmatch(s) is not None:
-        if gh != 0:
-            return 1
+        if re.search('(gross)', s) is None and re.search('(render)', s) is None \
+                and re.search('(comm(\s)?%)|(com(\s)?%)|(comm(ission)?)', s) is None:
+            if gh != 0:
+                return 1
+            else:
+                return 0
         else:
             return 0
     else:
         # print(str(x))
+        # give a second chance
+        # s = str(eddd).lower().strip()
+        # s, gh_second = secondChance(s, e)
+        # if gh_second != 0:
+        #    return 1
         return 0
         # else:
         #  return 1
 
 
-dataset = pd.read_csv(r'C:\Users\mohit.badwal.NOTEBOOK546.000\Downloads\Not_Success_rows_ver.csv',
+def afterPred(x):
+    if x['pred'] == 0 and x['total'] == 0:
+        eddd = str(x['str'])
+        e = x['check_amount']
+        eddd = cleaning_new(eddd)
+        s = str(eddd).lower().strip()
+        # if re.search('(statement)',s) is None:
+        s, gh_second = secondChance(s, e)
+        if gh_second != 0:
+            return 1
+        else:
+            return 0
+    return x['pred']
+
+
+dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image '
+                      r'Batches-20171017T131547Z-001\Not_Success_rows_ver_clean.csv',
                       encoding='cp1256')
 s = ""
 is_remit_flag = 0
@@ -148,25 +215,41 @@ print(dataset.shape)
 
 # countVectorizer = CountVectorizer(tokenizer=cleanandstem, min_df=50,max_df=0.5, stop_words='english')
 # theString = countVectorizer.fit_transform(dataset['row_string'])
+
+dataset['rows'] = dataset['page_noOfRows'] - dataset['row_rowNumber']
 dataset['total'] = dataset.apply(totalFlag, axis=1)
 dataset = last(dataset)
 tfidf = TfidfVectorizer(tokenizer=cleanandstem, min_df=100, stop_words='english', vocabulary=
-{'total', 'totals', 'grand', 'check', 'date', 'paid', 'net'})
+{'totals',
+ # 'totals',
+ 'grand'
+ })
 theString = tfidf.fit_transform(dataset['row_string'])
+# from sklearn.externals import joblib
+# joblib.dump(tfidf,"tfidf_ocr_total.pkl")
+# tfidf = joblib.load("tfidf_ocr_total.pkl")
+
 combine1 = pd.DataFrame(theString.todense())
 combine1.columns = tfidf.get_feature_names()
 print(combine1.columns)
-X = dataset.loc[:, ['total', 'row_isLastRow', 'row_string']]
+X = dataset.loc[:, [  # 'row_distanceFromTop',
+    # 'row_isLastRow',
+    'total',
+
+    'rows',
+    'row_string',
+    'check_checkAmount']]
 X = pd.concat([combine1.reset_index(drop=True), X.reset_index(drop=True)], axis=1, ignore_index=True)
 Y = dataset.loc[:, 'is_total_final']
 validation_size = 0.2
 seed = 20
 X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
-                                                                                random_state=seed)
-X = X.iloc[:, :-1]
-X_train = X_train.iloc[:, :-1]
-er = X_validation.iloc[:, -1]
-X_validation = X_validation.iloc[:, :-1]
+                                                                                )  # random_state=seed)
+# X_validation = X_validation.iloc[:, :-1]
+X_train = X_train.iloc[:, :-2]
+er = X_validation.iloc[:, -2]
+ch = X_validation.iloc[:, -1]
+X_validation = X_validation.iloc[:, :-2]
 
 
 # Y_validation = Y_validation.iloc[-10:-9]
@@ -177,18 +260,20 @@ def func(x):
     return x['pred']
 
 
-rfc = RandomForestClassifier(n_estimators=200)
+rfc = MLPClassifier(hidden_layer_sizes=(100, 100), activation='logistic')
 rfc.fit(X_train, Y_train)
-print(rfc.feature_importances_)
-predictions = rfc.predict(X)
-predictions_prob = rfc.predict_proba(X)
+# print(rfc.feature_importances_)
+predictions = rfc.predict(X_validation)
+predictions_prob = rfc.predict_proba(X_validation)
 pred_prob = pd.DataFrame(data=predictions_prob, columns=[0, 1])
-det = pd.DataFrame({"y_val": Y.copy(deep=False).values, "total":
-    X.copy(deep=False).iloc[:, -2].values, "pred": predictions, "pred_proba_0": pred_prob[0],
+det = pd.DataFrame({"str": er.values, "check_amount": ch.values, "y_val": Y_validation.copy(deep=False).values, "total":
+    X_validation.copy(deep=False).iloc[:, -2].values, "pred": predictions, "pred_proba_0": pred_prob[0],
                     "pred_proba_1": pred_prob[1]})
-det.to_csv("det1.csv")
-det['pred'] = det.apply(func, axis=1)
 
+det['pred'] = det.apply(func, axis=1)
+det['pred'] = det.apply(afterPred, axis=1)
+
+det.to_csv("det1.csv")
 a4 = pd.DataFrame(data=predictions, columns=['predictions'])
 df = pd.concat([er.reset_index(), det['y_val'], det['pred']], axis=1)
 df.to_csv("wer.csv")
@@ -197,9 +282,9 @@ print(accuracy_score(det['y_val'], det['pred']))
 print(confusion_matrix(det['y_val'], det['pred']))
 print(classification_report(det['y_val'], det['pred']))
 
-print(accuracy_score(Y, X.iloc[:, -2].values))
-print(confusion_matrix(Y, X.iloc[:, -2].values))
-print(classification_report(Y, X.iloc[:, -2].values))
+print(accuracy_score(Y_validation, X_validation.iloc[:, -2].values))
+print(confusion_matrix(Y_validation, X_validation.iloc[:, -2].values))
+print(classification_report(Y_validation, X_validation.iloc[:, -2].values))
 dataset[dataset['is_total_final'] != dataset['total']].loc[:, ['row_index', 'row_string', 'is_total_final', 'total']] \
     .to_csv('ocr_no_match.csv')
 
