@@ -279,7 +279,7 @@ X_test = X_test.iloc[:, :-2]
 
 
 def func(x):
-    if x['total'] == 1 and x['pred_proba_0'] < 0.88 and x['pred'] == 0:
+    if x['total'] == 1 and x['pred_proba_0'] < 0.81 and x['pred'] == 0:
         return 1
     return x['pred']
 
