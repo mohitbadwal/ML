@@ -44,6 +44,7 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.feature_extraction.text import CountVectorizer
 from scipy.sparse import hstack
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_selection import SelectKBest
@@ -87,21 +88,29 @@ df_c['page_type'] = df_c['page_type_final']
 df_c['page_type_final'] = df_c['page_type_final'].replace(
     ['remittance advice', 'invoice', 'invoice template', 'reminder', 'memo', 'accidental death and dismemberment plan',
      'improper remittance', 'template page', 'bill', 'cheque voucher template', 'check voucher'], 'others')
-dic = {'check': 0, 'envelope': 1, 'remittance': 2, 'others': 2}
+dic = {'check': 0, 'envelope': 1, 'remittance': 2, 'others': 3}
 df_c['page_type_final'] = df_c['page_type_final'].map(dic)
+
+df_c['amount_match'] = None
+df_c_test['amount_match'] = None
 
 
 def text_clean(df_c):
-    df_c['row_string'] = df_c['row_string'].apply(lambda x: x.lower())
-    df_c['row_string_new'] = df_c['row_string'].str.replace('[^\w\s]', ' ')
+    df_c['row_string_new'] = df_c['row_string'].apply(lambda x: x.lower())
+    # ==============================================================================
+    #     df_c['row_string_new']=df_c['row_string'].str.replace('[^\w\s]',' ')
+    #
+    #
+    #     stop=set(stopwords.words('english'))
+    #
+    #     df_c['row_string_new']=df_c['row_string_new'].apply(lambda x: [item for item in x.split()  if item not in stop])
+    #
+    #     df_c['row_string_new']=df_c['row_string_new'].apply(lambda x: ' '.join([i for i in x]))
+    return df_c
 
-    stop = set(stopwords.words('english'))
 
-    df_c['row_string_new'] = df_c['row_string_new'].apply(lambda x: [item for item in x.split() if item not in stop])
-
-    df_c['row_string_new'] = df_c['row_string_new'].apply(lambda x: ' '.join([i for i in x]))
-
-
+#
+# ==============================================================================
 #####################################################################################################
 
 
@@ -118,8 +127,8 @@ def envelope(df_c):
 
     list_g = []
     for i in df_c['row_string_new']:
-        if re.search('([lirndtph1j ]{10,})', i):
-            list_g.append(1)
+        if re.search('([li\,\.\'\"\?\!\(\\)rndtph1j]{10,})', i):
+            list_g.append(len(tuple(re.finditer('([li\,\.\'\"\?\!\(\\)rndtph1j]{10,})', i))))
         else:
             list_g.append(0)
 
@@ -128,7 +137,8 @@ def envelope(df_c):
     list_m = []
     for i in df_c['row_string_new']:
         if re.search('([m][a][i][l][e][d]) | ([ ][m][a][i][l][e][d][ ])|([ ][m][a][i][l][e][d])', i):
-            list_m.append(1)
+            list_m.append(
+                len(tuple(re.finditer('([m][a][i][l][e][d]) | ([ ][m][a][i][l][e][d][ ])|([ ][m][a][i][l][e][d])', i))))
         else:
             list_m.append(0)
 
@@ -139,7 +149,9 @@ def envelope(df_c):
         if re.search(
                 '([s][h][i][p][m][e][n][t])|([s][h][i][p][p][i][n][g])|([s][h][i][p][ ][d][a][t])|([s][h][i][p][ ][t][o])|([s][h][i][p][d][a][t])|([s][h][i][p][t][o])',
                 i):
-            list_s.append(1)
+            list_s.append(len(tuple(re.finditer(
+                '([s][h][i][p][m][e][n][t])|([s][h][i][p][p][i][n][g])|([s][h][i][p][ ][d][a][t])|([s][h][i][p][ ][t][o])|([s][h][i][p][d][a][t])|([s][h][i][p][t][o])',
+                i))))
         else:
             list_s.append(0)
 
@@ -150,7 +162,9 @@ def envelope(df_c):
         if re.search(
                 '([r][e][t][u][r][n][ ][s][e][r][v][i][c][e])|([r][e][t][u][r][n][s][e][r][v][i][c][e])|([r][e][t][u][r][n][t][o])|([r][e][t][u][r][n][ ][t][o])',
                 i):
-            list_ret.append(1)
+            list_ret.append(len(tuple(re.finditer(
+                '([r][e][t][u][r][n][ ][s][e][r][v][i][c][e])|([r][e][t][u][r][n][s][e][r][v][i][c][e])|([r][e][t][u][r][n][t][o])|([r][e][t][u][r][n][ ][t][o])',
+                i))))
         else:
             list_ret.append(0)
 
@@ -159,7 +173,7 @@ def envelope(df_c):
     list_e = []
     for i in df_c['row_string_new']:
         if re.search('(([e][n][v][e][l][o][p][e]))', i):
-            list_e.append(1)
+            list_e.append(len(tuple(re.finditer('(([e][n][v][e][l][o][p][e]))', i))))
         else:
             list_e.append(0)
 
@@ -168,7 +182,7 @@ def envelope(df_c):
     list_z = []
     for i in df_c['row_string_new']:
         if re.search('(([z][i][p]))', i):
-            list_z.append(1)
+            list_z.append(len(tuple(re.finditer('(([z][i][p]))', i))))
         else:
             list_z.append(0)
 
@@ -177,7 +191,7 @@ def envelope(df_c):
     list_a = []
     for i in df_c['row_string_new']:
         if re.search('(([a][d][d][r][e][s][s]))', i):
-            list_a.append(1)
+            list_a.append(len(tuple(re.finditer('(([a][d][d][r][e][s][s]))', i))))
         else:
             list_a.append(0)
 
@@ -186,7 +200,7 @@ def envelope(df_c):
     list_p = []
     for i in df_c['row_string_new']:
         if re.search('(([p][o][s][t][ ])|([p][o][s][t][a][g][e]))', i):
-            list_p.append(1)
+            list_p.append(len(tuple(re.finditer('(([p][o][s][t][ ])|([p][o][s][t][a][g][e]))', i))))
         else:
             list_p.append(0)
 
@@ -197,7 +211,9 @@ def envelope(df_c):
         if re.search(
                 '(([p][i][t][n][e][y])|([u][p][s])|([n][e][o][p])|([h][a][s][l][e][r])|([f][i][r][s][t][ ][c][l][a][s][s]))',
                 i):
-            list_fe.append(1)
+            list_fe.append(len(tuple(re.finditer(
+                '(([p][i][t][n][e][y])|([u][p][s])|([n][e][o][p])|([h][a][s][l][e][r])|([f][i][r][s][t][ ][c][l][a][s][s]))',
+                i))))
         else:
             list_fe.append(0)
 
@@ -209,7 +225,7 @@ def envelope(df_c):
 def checks(df_c):
     list_chase = []
     for i in df_c['row_string_new']:
-        if re.search('([a-zA-Z]*(chase))|([a-z]*(american express bank))|([a-z]*(goldman sachs bank))', i):
+        if re.search('([a-zA-Z0-9]*(chase))|([a-z0-9]*(american express bank))|([a-z0-9]*(goldman sachs bank))', i):
             list_chase.append(1)
         else:
             list_chase.append(0)
@@ -218,7 +234,7 @@ def checks(df_c):
 
     list_da = []
     for i in df_c['row_string_new']:
-        if re.search('([a-z]*(pay )[a-z]*)', i):
+        if re.search('([a-z0-9]*(pay )[a-z0-9]*)', i):
             list_da.append(1)
         else:
             list_da.append(0)
@@ -238,7 +254,7 @@ def checks(df_c):
 
     list_order = []
     for i in df_c['row_string_new']:
-        if re.search('[a-zA-Z]*(order)', i):
+        if re.search('[^(re)](order)', i):
             list_order.append(1)
         else:
             list_order.append(0)
@@ -247,7 +263,7 @@ def checks(df_c):
 
     list_currency = []
     for i in df_c['row_string_new']:
-        if re.search('([a-zA-Z]*(cent))|([a-zA-Z]*(dollar))', i):
+        if re.search('([a-zA-Z0-9]*(cents))|((one)(cent))|((one )(cent))|([a-zA-Z]*(dollar))', i):
             list_currency.append(1)
         else:
             list_currency.append(0)
@@ -256,7 +272,9 @@ def checks(df_c):
 
     list_auth = []
     for i in df_c['row_string_new']:
-        if re.search('([a-zA-Z]*(signature))|([a-zA-Z]*(authorized))|([a-zA-Z]*(watermark))|([a-zA-Z]*(security))', i):
+        if re.search(
+                '([a-zA-Z0-9]*(signature))|([a-zA-Z0-9]*(authorized))|([a-zA-Z0-9]*(watermark))|([a-zA-Z0-9]*(security))',
+                i):
             list_auth.append(1)
         else:
             list_auth.append(0)
@@ -265,7 +283,8 @@ def checks(df_c):
 
     list_col = []
     for i in df_c['row_string_new']:
-        if re.search('([a-zA-Z]*(background))|([a-zA-Z]*(colored))|([a-zA-Z]*(void))|([a-zA-Z]*(contains))', i):
+        if re.search('([a-zA-Z0-9]*(background))|([a-zA-Z0-9]*(colored))|([a-zA-Z0-9]*(void))|([a-zA-Z0-9]*(contains))',
+                     i):
             list_col.append(1)
         else:
             list_col.append(0)
@@ -275,21 +294,26 @@ def checks(df_c):
 
 
 def amount_match_func(df_c):
-    df_c['amount_match'] = None
     d = ''
-    e = ''
-
+    l1 = ''
+    l2 = ''
+    k = ''
     for i in range(0, df_c.shape[0]):
-        d = ("{:,f}".format(df_c['check_checkAmount'].values[i])).replace(',', ' ').replace('.', ' ').replace('0000',
-                                                                                                              '')
-        e = ("{:f}".format(df_c['check_checkAmount'].values[i])).replace('.', ' ').replace('0000', '')
-        if ((d in df_c['row_string_new'].values[i]) | (e in df_c['row_string_new'].values[i]) | (
+        d = ("{:,f}".format(df_c['check_checkAmount'].values[i])).replace('0000', '')
+        k = ("{:f}".format(df_c['check_checkAmount'].values[i]))
+        l1 = k.split('.')[0]
+        l2 = k.split('.')[1]
+        l2 = l2.replace('0000', '')
+        l1 = l1 + '.' + l2
+        if ((d in df_c['row_string_new'].values[i]) | (l1 in df_c['row_string_new'].values[i]) | (
             str(df_c['check_checkAmount'].values[i]) in df_c['row_string_new'])):
             df_c['amount_match'].values[i] = 1
         else:
             df_c['amount_match'].values[i] = 0
         d = ''
-        e = ''
+        k = ''
+        l1 = ''
+        l2 = ''
 
     for i in range(0, df_c.shape[0]):
         if (df_c['page_pageNumber'].values[i] == 1):
@@ -469,7 +493,8 @@ vocab2 = ['totals',
 
           'reg_m', 'reg_s', 'reg_ret', 'reg_e', 'reg_z', 'reg_a', 'reg_p', 'reg_fe',
 
-          'reg_chase', 'reg_da', 'reg_d', 'reg_order', 'reg_currency', 'reg_auth', 'reg_col', 'amount_match'
+          'reg_chase', 'reg_da', 'reg_d', 'reg_order', 'reg_currency', 'reg_auth', 'reg_col', 'amount_match',
+          'amount_count', 'date', 'check_identifier'
           ]
 
 final_train_data = text_clean(df_c)
@@ -477,6 +502,16 @@ final_train_data = func(df_c)
 final_train_data = envelope(df_c)
 final_train_data = checks(df_c)
 final_train_data = amount_match_func(df_c)
+final_train_data['amount_count'] = final_train_data['row_string_new'].apply(
+    lambda x: len(tuple(re.finditer('[0-9\,]+(\.)(0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)[a-z\$ ]', x))) if re.search(
+        '[0-9\,]+(\.)(0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)[a-z\$ ]', x) else 0)
+final_train_data['date'] = final_train_data['row_string_new'].apply(lambda x: len(tuple(re.finditer(
+    '((([0-3]?[0-9][/][0-1]?[0-9][/](((20)[0-9]{2})|([1-2]{1}[1-5]{1})))|([0-1]?[0-9][/][0-3]?[0-9][/](((20)[0-9]{2})|([1-2]{1}[1-5]{1})))|([0-3]?[1-9][ ]?(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|jun(e)?|jul(y)?|aug(ust)?|sep(tember)?|oct(ober)?|nov(ember)?|dec(ember)?))))',
+    x))) if re.search(
+    '(([0-3]?[0-9][/][0-1]?[0-9][/](([0-9]{4})|([0-9]{2})))|([0-1]?[0-9][-/][0-3]?[0-9][/-](([0-9]{4})|([0-9]{2})))|([0-3]?[1-9][ ]?(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|jun(e)?|jul(y)?|aug(ust)?|sep(tember)?|oct(ober)?|nov(ember)?|dec(ember)?)))',
+    x) else 0)
+final_train_data['check_identifier'] = final_train_data['page_pageNumber'].apply(lambda x: 1 if x == 1 else 0)
+
 final_train_data = final_train_data.reset_index()
 
 final_test_data = text_clean(df_c_test)
@@ -484,11 +519,21 @@ final_test_data = func(df_c_test)
 final_test_data = envelope(df_c_test)
 final_test_data = checks(df_c_test)
 final_test_data = amount_match_func(df_c_test)
+final_test_data['amount_count'] = final_test_data['row_string_new'].apply(
+    lambda x: len(tuple(re.finditer('[0-9\,]+(\.)(0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)[a-z\$ ]', x))) if re.search(
+        '[0-9\,]+(\.)(0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)[a-z\$ ]', x) else 0)
+final_test_data['date'] = final_test_data['row_string_new'].apply(lambda x: len(tuple(re.finditer(
+    '((([0-3]?[0-9][/][0-1]?[0-9][/](((20)[0-9]{2})|([1-2]{1}[1-5]{1})))|([0-1]?[0-9][/][0-3]?[0-9][/](((20)[0-9]{2})|([1-2]{1}[1-5]{1})))|([0-3]?[1-9][ ]?(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|jun(e)?|jul(y)?|aug(ust)?|sep(tember)?|oct(ober)?|nov(ember)?|dec(ember)?))))',
+    x))) if re.search(
+    '(([0-3]?[0-9][/][0-1]?[0-9][/](([0-9]{4})|([0-9]{2})))|([0-1]?[0-9][-/][0-3]?[0-9][/-](([0-9]{4})|([0-9]{2})))|([0-3]?[1-9][ ]?(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|jun(e)?|jul(y)?|aug(ust)?|sep(tember)?|oct(ober)?|nov(ember)?|dec(ember)?)))',
+    x) else 0)
+final_test_data['check_identifier'] = final_test_data['page_pageNumber'].apply(lambda x: 1 if x == 1 else 0)
+
 final_test_data = final_test_data.reset_index()
 
 train_labels = label.reset_index()
 
-ovr = OneVsRestClassifier(RandomForestClassifier(n_estimators=800, max_depth=22, min_samples_leaf=1, random_state=42))
+ovr = OneVsRestClassifier(RandomForestClassifier(n_estimators=300))
 
 ovr.fit(final_train_data[vocab2], train_labels['page_type_final'])
 pred = ovr.predict(final_test_data[vocab2])
@@ -505,8 +550,13 @@ data_test['page_type'] = None
 for j in range(0, data_temp.shape[0]):
     a = data_temp.at[j, 'check_checkNumber']
     b = data_temp.at[j, 'page_pageNumber']
-    data_test.loc[(data_test['check_checkNumber'] == a) & (data_test['page_pageNumber'] == b), 'page_type'] = \
-    data_temp.at[j, 'pred']
+    data_test.loc[(data_test['check_checkNumber'] == a) & (data_test['page_pageNumber'] == b), 'pred'] = data_temp.at[
+        j, 'pred']
 
 # path='C:\\Users\\gaurav.subedar\\Desktop\\doc_classification'
 data_test.to_csv(test_file)
+
+
+
+
+
