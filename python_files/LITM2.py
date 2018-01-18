@@ -22,7 +22,7 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
 
 data=pd.read_csv(r"C:\Users\shubham.kamal\Desktop\LITM\new_result.csv", sep=',',encoding='cp1256')
 print('initial shape = ',data.shape)
-
+# hello form the other side
 data = data[data['page_type_final'] == 'remittance']
 print('final shape = ',data.shape)
 
