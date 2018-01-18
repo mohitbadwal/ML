@@ -6,7 +6,6 @@ from sklearn import model_selection
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
-from sklearn.neural_network import MLPClassifier
 
 dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image '
                       r'Batches-20171017T131547Z-001\Not_Success_rows_ver_clean.csv',
@@ -202,10 +201,8 @@ testString = tfidf.transform(test_dataset['row_string'])
 combine1 = pd.DataFrame(theString.todense())
 combine1.columns = tfidf.get_feature_names()
 print(combine1.columns)
-
 combine2 = pd.DataFrame(testString.todense())
 combine2.columns = tfidf.get_feature_names()
-
 X = dataset.loc[:, ['row_rowNumber',
                     'heading',
                     'row_numberAlphaRatio',
@@ -232,33 +229,15 @@ Y = dataset.loc[:, 'is_heading']
 validation_size = 0.2
 seed = 20
 X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
-<<<<<<< .merge_file_a08888
-<<<<<<< .merge_file_a10836
-                                                                                  random_state=seed)
-=======
-=======
->>>>>>> .merge_file_a10492
 <<<<<<< Updated upstream
                                                                                 random_state=seed)
 =======
                                                                                   random_state=seed)
 >>>>>>> Stashed changes
-<<<<<<< .merge_file_a08888
->>>>>>> .merge_file_a02420
-
-r = X_validation.iloc[:, -1]
-X_train = X_train.iloc[:, :-1]
-<<<<<<< .merge_file_a10836
-r = X_validation.iloc[:,-1]
-=======
-
->>>>>>> .merge_file_a02420
-=======
 
 r = X_validation.iloc[:, -1]
 X_train = X_train.iloc[:, :-1]
 
->>>>>>> .merge_file_a10492
 X_validation = X_validation.iloc[:, :-1]
 
 
@@ -268,25 +247,13 @@ def func(x):
     return x['pred']
 
 
-rfc = MLPClassifier(hidden_layer_sizes=(100, 100), activation='relu')
+rfc = RandomForestClassifier(n_estimators=200, )
 rfc.fit(X_train, Y_train)
 predictions = rfc.predict(X_validation)
 predictions_prob = rfc.predict_proba(X_validation)
-<<<<<<< .merge_file_a08888
-<<<<<<< .merge_file_a10836
-# print(X.columns, rfc.feature_importances_)
-pred_prob = pd.DataFrame(data=predictions_prob, columns=[0, 1])
-det = pd.DataFrame({"str":r.values,"y_val": Y_validation.copy(deep=False).values, "total":
-=======
 print(X.columns, rfc.feature_importances_)
 pred_prob = pd.DataFrame(data=predictions_prob, columns=[0, 1])
 det = pd.DataFrame({"y_val": Y_validation.copy(deep=False).values, "total":
->>>>>>> .merge_file_a02420
-=======
-print(X.columns, rfc.feature_importances_)
-pred_prob = pd.DataFrame(data=predictions_prob, columns=[0, 1])
-det = pd.DataFrame({"y_val": Y_validation.copy(deep=False).values, "total":
->>>>>>> .merge_file_a10492
     X_validation.copy(deep=False).iloc[:, -2].values, "pred": predictions, "pred_proba_0": pred_prob[0],
                     "pred_proba_1": pred_prob[1]})
 det['pred'] = det.apply(func, axis=1)
