@@ -72,7 +72,13 @@ else:
 dataset = pd.read_csv(train_file,
                       encoding='cp1256')
 dataset_test = pd.read_csv(test_file,encoding='cp1256')
-dataset = dataset[(dataset.page_type_final =='remittance')]
+#dataset = dataset[(dataset.page_type_final =='remittance')]
+dataset.fillna(0, inplace=True)
+
+dataset.replace('\\N', 0, inplace=True)
+dataset_test.fillna(0, inplace=True)
+
+dataset_test.replace('\\N', 0, inplace=True)
 dataset['sub1'] = dataset.check_noOfPages - dataset.page_pageNumber
 dataset.sub1 = dataset.sub1.apply(lambda x: 0 if x<0 else x)
 

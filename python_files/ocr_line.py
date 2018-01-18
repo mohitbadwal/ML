@@ -195,6 +195,12 @@ def afterPred(x):
 
 dataset = pd.read_csv(train_file, encoding='cp1256')
 dataset_test = pd.read_csv(test_file, encoding='cp1256')
+dataset.fillna(0, inplace=True)
+
+dataset.replace('\\N', 0, inplace=True)
+dataset_test.fillna(0, inplace=True)
+
+dataset_test.replace('\\N', 0, inplace=True)
 s = ""
 is_remit_flag = 0
 is_total_flag = 0
@@ -217,7 +223,7 @@ def last(x):
     return x
 
 
-dataset = dataset[dataset['page_type_final'] == 'remittance'].reset_index()
+#dataset = dataset[dataset['page_type_final'] == 'remittance'].reset_index()
 print(dataset.shape)
 print(dataset_test.shape)
 
@@ -226,11 +232,11 @@ print(dataset_test.shape)
 
 dataset['rows'] = dataset['page_noOfRows'] - dataset['row_rowNumber']
 dataset['total'] = dataset.apply(totalFlag, axis=1)
-dataset = last(dataset)
+#dataset = last(dataset)
 
 dataset_test['rows'] = dataset_test['page_noOfRows'] - dataset_test['row_rowNumber']
 dataset_test['total'] = dataset_test.apply(totalFlag, axis=1)
-dataset_test = last(dataset_test)
+#dataset_test = last(dataset_test)
 
 tfidf = TfidfVectorizer(tokenizer=cleanandstem, min_df=100, stop_words='english', vocabulary=
 {'totals',

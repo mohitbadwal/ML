@@ -37,21 +37,12 @@ data2 = pd.read_csv(test_file, sep=',', encoding='cp1256', low_memory=False)
 
 # data = data[data['page_type_final'] == 'remittance']
 # data2=data2[data2['page_pageType'] == 'REMITTANCE_PAGE']
-data.loc[data['page_type_final'] == 'check', 'page_type'] = 0
-data.loc[data['page_type_final'] == 'envelope', 'page_type'] = 1
-data.loc[(data['page_type_final'] != 'check') & (data['page_type_final'] != 'envelope'), 'page_type'] = 2
+
 data = data.reset_index(drop=True)
 
 data3 = data.append(data2, ignore_index=True)
-data3['row_noOfCharacters'] = pd.cut(data3['row_noOfCharacters'], bins=10).cat.codes
-data3 = data3.reset_index(drop=True)
 
-data = data.reset_index(drop=True)
-data2 = data2.reset_index(drop=True)
-data['row_noOfCharacters'] = data3['row_noOfCharacters'].loc[:data.shape[0] - 1].reset_index(drop=True)
-data2['row_noOfCharacters'] = data3['row_noOfCharacters'].loc[data.shape[0]:data3.shape[0] - 1].reset_index(drop=True)
-data = data.reset_index(drop=True)
-data2 = data2.reset_index(drop=True)
+
 
 data['remittance_result'] = 0
 for i in data['check_checkNumber'].unique():
@@ -125,8 +116,6 @@ for i in data2['check_checkNumber'].unique():
         data2.loc[(data2['check_checkNumber'] == i) & (data2['page_pageNumber'] == j) & (
         data2['row_rowNumber'] > total_row_number), 'remittance_result'] = 0
 
-data.loc[data['page_type'] != 2, 'remittance_result'] = 0
-data2.loc[data2['page_type'] != 2, 'remittance_result'] = 0
 
 for i in range(0, data3.shape[0]):
     s = data3.at[i, 'row_string']
@@ -140,6 +129,18 @@ for i in range(0, data3.shape[0]):
     data3.at[i, 'total_letters'] = letters / total_charac * 100
     data3.at[i, 'total_spaces'] = spaces / total_charac * 100
     data3.at[i, 'total_others'] = others / total_charac * 100
+    total_charac = total_charac+spaces
+    data3.at[i,'row_noOfCharacters']=total_charac
+
+data3['row_noOfCharacters'] = pd.cut(data3['row_noOfCharacters'], bins=10).cat.codes
+data = data.reset_index(drop=True)
+data2 = data2.reset_index(drop=True)
+data['row_noOfCharacters'] = data3['row_noOfCharacters'].loc[:data.shape[0] - 1].reset_index(drop=True)
+data2['row_noOfCharacters'] = data3['row_noOfCharacters'].loc[data.shape[0]:data3.shape[0] - 1].reset_index(drop=True)
+data = data.reset_index(drop=True)
+data2 = data2.reset_index(drop=True)
+
+data3 = data3.reset_index(drop=True)
 
 data3['total_digits_coded'] = pd.cut(data3['total_digits'], bins=10).cat.codes
 data3['total_letters_coded'] = pd.cut(data3['total_letters'], bins=10).cat.codes
@@ -180,10 +181,11 @@ for i in range(0, data.shape[0]):
     s = data.at[i, 'row_string']
     if '$' in s:
         data.at[i, 'amount_col_man'] = 1
-    s = s.replace(',', '')
+    s = s.replace(', ', ',')
     s = s.replace('$', ' ')
-    digits = re.findall(r"\s+\d+\.\d+$|\s+\d+\.\d+\s+", s, flags=re.MULTILINE)
+    digits = re.findall(r"\s+\d+\.\d+$|\s+\d+\.\d+\s+|\d{1,2}[\,]{1}\d{1,3}[\.]{1}\d{1,2}", s, flags=re.MULTILINE)
     for j in digits:
+        j=j.replace(',','')
         if float(j) <= data.at[i, 'check_checkAmount']:
             data.at[i, 'amount_col_man'] = 1
             break
@@ -193,13 +195,38 @@ for i in range(0, df3.shape[0]):
     s = df3.at[i, 'row_string']
     if '$' in s:
         df3.at[i, 'amount_col_man'] = 1
-    s = s.replace(',', '')
+    s = s.replace(', ', ',')
     s = s.replace('$', ' ')
-    digits = re.findall(r"\s+\d+\.\d+$|\s+\d+\.\d+\s+", s, flags=re.MULTILINE)
+    digits = re.findall(r"\s+\d+\.\d+$|\s+\d+\.\d+\s+|\d{1,2}[\,]{1}\d{1,3}[\.]{1}\d{1,2}", s, flags=re.MULTILINE)
     for j in digits:
+        j=j.replace(',','')
         if float(j) <= df3.at[i, 'check_checkAmount']:
             df3.at[i, 'amount_col_man'] = 1
             break
+
+data['ref_no_bool']=0
+for i in range(0,data.shape[0]):
+    s=data.at[i,'row_string']
+    #s = s.replace('-', '')
+    digits=re.findall(r"[0-9]+", s,flags=re.MULTILINE)
+    for j in digits:
+        if len(j)>=6:
+            data.at[i,'ref_no_bool']=1
+            break
+
+
+df3['ref_no_bool']=0
+for i in range(0,df3.shape[0]):
+    s=df3.at[i,'row_string']
+    #s = s.replace('-', '')
+    digits=re.findall(r"[0-9]+", s,flags=re.MULTILINE)
+    for j in digits:
+        if len(j)>=6:
+            df3.at[i,'ref_no_bool']=1
+            break
+
+
+
 
 pattern = re.compile(
     "Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?\s+\d{1,2}[,/.]\s+\d{4}([0-3]?[0-9][.|/][0-1]?[0-9][.|/](([0-9]{4})|([0-9]{2})))|([0-1]?[0-9][.|/][0-3]?[0-9][.|/](([0-9]{4})|([0-9]{2})))",
@@ -300,13 +327,13 @@ def print_metrics(Y_validation, predictions, predictions_prob=None):
         print("Log loss", sklearn.metrics.log_loss(Y_validation, predictions_prob))
 
 
-cols = ['page_type', 'date_flag', 'amount_col_man', 'ratio_row_section', 'row_noOfCharacters', 'remittance_result',
+cols = ['ref_no_bool', 'date_flag', 'amount_col_man', 'ratio_row_section', 'row_noOfCharacters', 'remittance_result',
         'total_digits_coded', 'row_JosasisLRCoordinates_left', 'row_JosasisLRCoordinates_right', 'row_distanceFromLeft',
         'row_distanceFromTop']
 X_train = data[cols]
 X_validation = df3[cols]
 Y_train = data['is_remittance_final'].reset_index(drop=True)
-Y_validation = df3['is_remittance_final_original'].reset_index(drop=True)
+Y_validation = df3['is_remittance_final'].reset_index(drop=True)
 
 rfc = RandomForestClassifier(n_estimators=300)
 rfc.fit(X_train, Y_train)
