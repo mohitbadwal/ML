@@ -130,7 +130,7 @@ dataset = pd.read_csv(r'D:\backup\PycharmProjects\test\Image '
                       encoding='cp1256')
 
 dataset_test = pd.read_csv(r'D:\backup\PycharmProjects\test\Image '
-                           r'Batches-20171017T131547Z-001\Success_rows3.csv',
+                           r'Batches-20171017T131547Z-001\test_data_merged_row_level_3_class.csv',
                            encoding='cp1256')
 
 s = ""
@@ -155,12 +155,10 @@ def last(x):
     return x
 
 ind1 = dataset[dataset['page_type_final'] == 'remittance'].index
-# ind2 = dataset_test[(dataset_test['pred'] == 2)].index
+ind2 = dataset_test[(dataset_test['pred'] == 2)].index
 
 dataset = dataset[dataset['page_type_final'] == 'remittance'].reset_index()
-dataset_test['row_ert'] = dataset_test['row_string']
-
-# dataset_test = dataset_test[(dataset_test['pred'] == 2)].reset_index()
+dataset_test = dataset_test[(dataset_test['pred'] == 2)].reset_index()
 print(dataset.shape)
 
 # countVectorizer = CountVectorizer(tokenizer=cleanandstem, min_df=50,max_df=0.5, stop_words='english')
@@ -221,10 +219,6 @@ rfc.fit(X, Y)
 # print(rfc.feature_importances_)
 predictions = rfc.predict(X_test)
 predictions_prob = rfc.predict_proba(X_test)
-dataset_test['row_string'] = dataset_test['row_ert']
-dataset_test['is_total'] = pd.DataFrame(data=predictions)
-dataset_test.to_csv("test.csv")
-'''
 pred_prob = pd.DataFrame(data=predictions_prob, columns=[0, 1])
 det = pd.DataFrame({"str": er.values, "total":
     X_test.copy(deep=False).iloc[:, -2].values, "is_total_final": predictions, "pred_proba_0": pred_prob[0],
@@ -234,8 +228,7 @@ det['pred'] = det.apply(func, axis=1)
 
 a4 = pd.DataFrame(data=predictions, columns=['predictions'])
 df = pd.concat([dataset_test,det['is_total_final']], axis=1)
-df.to_csv("test.csv")
-'''
+df.to_csv("toKamal-1.3_not.csv")
 
 '''
 ([$]?[0-9]*[\,]?[0-9]*[\.]?[0-9]+)|(.*((total)(s)?|(amount)).*([$]?([0-9]*[\,]?[0-9]*[\.]?[0-9]+)))
