@@ -23,22 +23,56 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
 from dateutil.parser import parse
 
 
-
 ####################################################################################################
 
 
-data=pd.read_csv(r"C:\Users\shubham.kamal\Desktop\LITM\Not_Success_rows_ver_clean.csv", sep=',',encoding='cp1256')
-data2=pd.read_csv(r"C:\Users\shubham.kamal\Desktop\LITM\Success_rows_final1.csv", sep=',',encoding='cp1256',low_memory=False)
+data_set=pd.read_csv(r"D:\New folder\Modspace\CSVs\COMBINED_CSV.csv", sep=',',encoding='cp1256')
+#data2=pd.read_csv(r"D:\New folder\Modspace\CSVs\COMBINED_CSV_test.csv", sep=',',encoding='cp1256',low_memory=False)
 
-#data = data[data['page_type_final'] == 'remittance']
-#data2=data2[data2['page_pageType'] == 'REMITTANCE_PAGE']
-data.loc[data['page_type_final']=='check','page_type']=0
-data.loc[data['page_type_final']=='envelope','page_type']=1
-data.loc[(data['page_type_final']!='check') & (data['page_type_final']!='envelope'),'page_type']=2
+#data2=pd.read_csv(r"C:\Users\shubham.kamal\Desktop\LITM\Success_rows_final1.csv",sep=',',encoding='cp1256')
+#data=pd.read_csv(r"C:\Users\shubham.kamal\Desktop\LITM\Not_Success_rows_ver_clean.csv",sep=',',encoding='cp1256')
+
+
+data_set=data_set[data_set['page_pageType']=='REMITTANCE_PAGE']
+#data2=data2[data2['page_pageType']=='REMITTANCE_PAGE']
+data=pd.DataFrame()
+data2=pd.DataFrame()
+diff_checks=data_set[data_set['is_remittance_final']!=data_set['is_remittance_final_original']]['check_checkNumber'].unique()
+
+for i in data_set['check_checkNumber'].unique():
+    if i not in diff_checks:
+        data=data.append(data_set[data_set['check_checkNumber']==i],ignore_index=True)
+    else:
+        data2 = data2.append(data_set[data_set['check_checkNumber'] == i], ignore_index=True)
+
 data=data.reset_index(drop=True)
+data2=data2.reset_index(drop=True)
+
+# data.to_csv("D:\\New folder\\Modspace\\CSVs\\COMBINED_CSV_training_new.csv")
+#data2.to_csv("D:\\New folder\\Modspace\\CSVs\\Combined_test_Gaurav_Heading_Model2.csv")
+data2=pd.read_csv(r"D:\New folder\Modspace\CSVs\Combined_test_Gaurav_Heading_Model2.csv", sep=',',encoding='cp1256')
+
+suraj_success=pd.read_csv(r"D:\New folder\Modspace\CSVs\Success_Modspace_Suraj.csv", sep=',',encoding='cp1256')
+
+#data=data.append(suraj_success,ignore_index=True)
+data.to_csv("D:\\New folder\\Modspace\\CSVs\\COMBINED_CSV_training_new.csv")
+# final model hai tera yea ?
+# hahahahhs
+# data.loc[data['page_type_final']=='check','page_type']=0
+# data.loc[data['page_type_final']=='envelope','page_type']=1
+# data.loc[(data['page_type_final']!='check') & (data['page_type_final']!='envelope'),'page_type']=2
+# data=data.reset_index(drop=True)
 
 data3=data.append(data2,ignore_index=True)
 data3['row_noOfCharacters']=pd.cut(data3['row_noOfCharacters'],bins=10).cat.codes
+data3['row_distanceFromLeft']=pd.cut(data3['row_distanceFromLeft'],bins=10)
+print('row_distanceFromLeft',data3['row_distanceFromLeft'].unique())
+data3['row_distanceFromLeft']=data3['row_distanceFromLeft'].cat.codes
+data3['row_distanceFromTop']=pd.cut(data3['row_distanceFromTop'],bins=10)
+print('row_distanceFromTop',data3['row_distanceFromTop'].unique())
+data3['row_distanceFromTop']=data3['row_distanceFromTop'].cat.codes
+data3['row_JosasisLRCoordinates_left']=pd.cut(data3['row_JosasisLRCoordinates_left'],bins=10).cat.codes
+data3['row_JosasisLRCoordinates_right']=pd.cut(data3['row_JosasisLRCoordinates_right'],bins=10).cat.codes
 data3=data3.reset_index(drop=True)
 
 data=data.reset_index(drop=True)
@@ -47,6 +81,27 @@ data['row_noOfCharacters']=data3['row_noOfCharacters'].loc[:data.shape[0]-1].res
 data2['row_noOfCharacters']=data3['row_noOfCharacters'].loc[data.shape[0]:data3.shape[0]-1].reset_index(drop=True)
 data=data.reset_index(drop=True)
 data2=data2.reset_index(drop=True)
+
+data['row_distanceFromLeft']=data3['row_distanceFromLeft'].loc[:data.shape[0]-1].reset_index(drop=True)
+data2['row_distanceFromLeft']=data3['row_distanceFromLeft'].loc[data.shape[0]:data3.shape[0]-1].reset_index(drop=True)
+data=data.reset_index(drop=True)
+data2=data2.reset_index(drop=True)
+
+data['row_distanceFromTop']=data3['row_distanceFromTop'].loc[:data.shape[0]-1].reset_index(drop=True)
+data2['row_distanceFromTop']=data3['row_distanceFromTop'].loc[data.shape[0]:data3.shape[0]-1].reset_index(drop=True)
+data=data.reset_index(drop=True)
+data2=data2.reset_index(drop=True)
+
+data['row_JosasisLRCoordinates_left']=data3['row_JosasisLRCoordinates_left'].loc[:data.shape[0]-1].reset_index(drop=True)
+data2['row_JosasisLRCoordinates_left']=data3['row_JosasisLRCoordinates_left'].loc[data.shape[0]:data3.shape[0]-1].reset_index(drop=True)
+data=data.reset_index(drop=True)
+data2=data2.reset_index(drop=True)
+
+data['row_JosasisLRCoordinates_right']=data3['row_JosasisLRCoordinates_right'].loc[:data.shape[0]-1].reset_index(drop=True)
+data2['row_JosasisLRCoordinates_right']=data3['row_JosasisLRCoordinates_right'].loc[data.shape[0]:data3.shape[0]-1].reset_index(drop=True)
+data=data.reset_index(drop=True)
+data2=data2.reset_index(drop=True)
+
 
 data['remittance_result']=0
 for i in data['check_checkNumber'].unique():
@@ -74,10 +129,13 @@ for i in data['check_checkNumber'].unique():
         if df2.empty:
             heading_row_number=first_row
         else:
-            heading_row_number=df2.reset_index(drop=True).at[0,'row_rowNumber']
-        data.loc[(data['check_checkNumber'] == i) & (data['page_pageNumber'] == j) & (data['row_rowNumber']<= heading_row_number),'remittance_result']=0
-        data.loc[(data['check_checkNumber'] == i) & (data['page_pageNumber'] == j) & ((data['row_rowNumber'] > heading_row_number) & (data['row_rowNumber'] < total_row_number)), 'remittance_result'] = 1
-        data.loc[(data['check_checkNumber'] == i) & (data['page_pageNumber'] == j) & (data['row_rowNumber'] >= total_row_number), 'remittance_result'] = 0
+            heading_row_number=df2.reset_index(drop=True).at[df2.shape[0]-1,'row_rowNumber']
+        data.loc[(data['check_checkNumber'] == i) & (data['page_pageNumber'] == j) & (data['row_rowNumber']< heading_row_number),'remittance_result']=0
+        data.loc[(data['check_checkNumber'] == i) & (data['page_pageNumber'] == j) & ((data['row_rowNumber'] > heading_row_number) & (data['row_rowNumber'] <= total_row_number)), 'remittance_result'] = 1
+        data.loc[(data['check_checkNumber'] == i) & (data['page_pageNumber'] == j) & (data['row_rowNumber'] > total_row_number), 'remittance_result'] = 0
+
+
+
 
 data2['remittance_result']=0
 for i in data2['check_checkNumber'].unique():
@@ -99,22 +157,18 @@ for i in data2['check_checkNumber'].unique():
             continue
         if df.empty:
             total_row_number=last_row
+        else:
+            total_row_number=df.reset_index(drop=True).at[df.shape[0]-1,'row_rowNumber']
             data2.loc[(data2['check_checkNumber'] == i) & (data2['page_pageNumber'] == j) & (
             data2['row_rowNumber'] == total_row_number), 'remittance_result'] = 1
-        else:
-
-            total_row_number=df.reset_index(drop=True).at[df.shape[0]-1,'row_rowNumber']
         if df2.empty:
             heading_row_number=first_row
         else:
-            heading_row_number=df2.reset_index(drop=True).at[0,'row_rowNumber']
-        data2.loc[(data2['check_checkNumber'] == i) & (data2['page_pageNumber'] == j) & (data2['row_rowNumber']<= heading_row_number),'remittance_result']=0
-        data2.loc[(data2['check_checkNumber'] == i) & (data2['page_pageNumber'] == j) & ((data2['row_rowNumber'] > heading_row_number) & (data2['row_rowNumber'] < total_row_number)), 'remittance_result'] = 1
-        data2.loc[(data2['check_checkNumber'] == i) & (data2['page_pageNumber'] == j) & (data2['row_rowNumber'] >= total_row_number), 'remittance_result'] = 0
+            heading_row_number=df2.reset_index(drop=True).at[df2.shape[0]-1,'row_rowNumber']
+        data2.loc[(data2['check_checkNumber'] == i) & (data2['page_pageNumber'] == j) & (data2['row_rowNumber']< heading_row_number),'remittance_result']=0
+        data2.loc[(data2['check_checkNumber'] == i) & (data2['page_pageNumber'] == j) & ((data2['row_rowNumber'] > heading_row_number) & (data2['row_rowNumber'] <= total_row_number)), 'remittance_result'] = 1
+        data2.loc[(data2['check_checkNumber'] == i) & (data2['page_pageNumber'] == j) & (data2['row_rowNumber'] > total_row_number), 'remittance_result'] = 0
 
-
-data.loc[data['page_type']!=2,'remittance_result']=0
-data2.loc[data2['page_type']!=2,'remittance_result']=0
 
 for i in range(0,data3.shape[0]):
     s=data3.at[i,'row_string']
@@ -129,7 +183,9 @@ for i in range(0,data3.shape[0]):
     data3.at[i, 'total_spaces'] = spaces/total_charac*100
     data3.at[i, 'total_others'] = others/total_charac*100
 
-data3['total_digits_coded']=pd.cut(data3['total_digits'],bins=10).cat.codes
+data3['total_digits_coded']=pd.cut(data3['total_digits'],bins=10)
+print('bins = ',data3['total_digits_coded'])
+data3['total_digits_coded']=data3['total_digits_coded'].cat.codes
 data3['total_letters_coded']=pd.cut(data3['total_letters'],bins=10).cat.codes
 data3['total_spaces_coded']=pd.cut(data3['total_spaces'],bins=10).cat.codes
 data3['total_others_coded']=pd.cut(data3['total_others'],bins=10).cat.codes
@@ -172,13 +228,20 @@ for i in range(0,data.shape[0]):
     s=data.at[i,'row_string']
     if '$' in s:
         data.at[i, 'amount_col_man'] = 1
-    s = s.replace(',', '')
     s=s.replace('$',' ')
-    digits=re.findall(r"\s+\d+\.\d+$|\s+\d+\.\d+\s+", s,flags=re.MULTILINE)
+    s = s.replace(', ', ',')
+    digits=re.findall(r"\d+\.\d+|\d{1,2}[\,]{1}\d{1,3}[\.]{1}\d{1,2}", s,flags=re.MULTILINE)
+    max=0
+    flag=0
     for j in digits:
-        if float(j)<=data.at[i,'check_checkAmount']:
-            data.at[i,'amount_col_man']=1
-            break
+        j=j.replace(',','')
+        if ((float(j)<=data.at[i,'check_checkAmount']) & (float(j)>0)):
+            flag = 1
+            if (max < float(j)):
+                max = float(j)
+    if (flag == 1):
+        data.at[i, 'amount_col_man'] = 1
+        data.at[i, 'amount_fetched'] = max
 
 
 df3['amount_col_man']=0
@@ -186,16 +249,44 @@ for i in range(0,df3.shape[0]):
     s=df3.at[i,'row_string']
     if '$' in s:
         df3.at[i, 'amount_col_man'] = 1
-    s = s.replace(',', '')
     s = s.replace('$', ' ')
-    digits=re.findall(r"\s+\d+\.\d+$|\s+\d+\.\d+\s+", s,flags=re.MULTILINE)
+    s=s.replace(', ',',')
+    digits=re.findall(r"\d+\.\d+|\d{1,2}[\,]{1}\d{1,3}[\.]{1}\d{1,2}", s,flags=re.MULTILINE)
+    max=0
+    flag=0
     for j in digits:
-        if float(j)<=df3.at[i,'check_checkAmount']:
-            df3.at[i,'amount_col_man']=1
+        j=j.replace(',','')
+        if ((float(j)<=df3.at[i,'check_checkAmount']) & (float(j)>0)):
+            flag=1
+            if (max<float(j)):
+                max=float(j)
+    if flag==1:
+        df3.at[i,'amount_col_man']=1
+        df3.at[i, 'amount_fetched'] = max
+
+
+data['ref_no_bool']=0
+for i in range(0,data.shape[0]):
+    s=data.at[i,'row_string']
+    #s = s.replace('-', '')
+    digits=re.findall(r"[0-9]+", s,flags=re.MULTILINE)
+    for j in digits:
+        if len(j)>=6:
+            data.at[i,'ref_no_bool']=1
             break
 
 
-pattern=re.compile("Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?\s+\d{1,2}[,/.]\s+\d{4}([0-3]?[0-9][.|/][0-1]?[0-9][.|/](([0-9]{4})|([0-9]{2})))|([0-1]?[0-9][.|/][0-3]?[0-9][.|/](([0-9]{4})|([0-9]{2})))",re.IGNORECASE)
+df3['ref_no_bool']=0
+for i in range(0,df3.shape[0]):
+    s=df3.at[i,'row_string']
+    #s = s.replace('-', '')
+    digits=re.findall(r"[0-9]+", s,flags=re.MULTILINE)
+    for j in digits:
+        if len(j)>=6:
+            df3.at[i,'ref_no_bool']=1
+            break
+
+pattern=re.compile("Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?\s+\d{1,2}[,/.]\s+\d{4}([0-3]?[0-9][.|/][0-1]?[0-9][.|/](([0-9]{4})|([0-9]{2})))|([0-1]?[0-9][.|/][0-3]?[0-9][.|/](([0-9]{4})|([0-9]{2})))|\d{1,4}[\-|\.|\/]{1}\d{1,4}[\-|\.|\/]{1}\d{2,4}",re.IGNORECASE)
 
 
 def dateFlag(x):
@@ -209,6 +300,9 @@ def dateFlag(x):
 data['date_flag'] = data['row_string'].apply(dateFlag)
 df3['date_flag'] = df3['row_string'].apply(dateFlag)
 
+
+data['count_of_features']=data['date_flag']+data['amount_col_man']+data['ref_no_bool']+data['remittance_result']
+df3['count_of_features']=df3['date_flag']+df3['amount_col_man']+df3['ref_no_bool']+df3['remittance_result']
 # data['date_amt_combined']=0
 # df3['date_amt_combined']=0
 # data.loc[(data['date_flag']==1) & (data['amount_col_man']==1),'date_amt_combined']=1
@@ -230,27 +324,27 @@ def is_date(string):
     except ValueError:
         return 0
 
-for i in range(0,df3.shape[0]):
-    s=df3.at[i,'row_string']
-    words=s.split()
-    for j in words:
-        try:
-            if is_date(j)==1:
-                df3.at[i, 'date_flag'] = 1
-                break
-        except OverflowError:
-            continue
-
-for i in range(0,data.shape[0]):
-    s=data.at[i,'row_string']
-    words=s.split()
-    for j in words:
-        try:
-            if is_date(j)==1:
-                data.at[i, 'date_flag'] = 1
-                break
-        except OverflowError:
-            continue
+# for i in range(0,df3.shape[0]):
+#     s=df3.at[i,'row_string']
+#     words=s.split()
+#     for j in words:
+#         try:
+#             if is_date(j)==1:
+#                 df3.at[i, 'date_flag'] = 1
+#                 break
+#         except OverflowError:
+#             continue
+#
+# for i in range(0,data.shape[0]):
+#     s=data.at[i,'row_string']
+#     words=s.split()
+#     for j in words:
+#         try:
+#             if is_date(j)==1:
+#                 data.at[i, 'date_flag'] = 1
+#                 break
+#         except OverflowError:
+#             continue
 
 
 
@@ -290,61 +384,94 @@ def print_metrics(Y_validation, predictions, predictions_prob=None):
     if predictions_prob is not None:
         print("Log loss", sklearn.metrics.log_loss(Y_validation, predictions_prob))
 
+
 cols=['page_type','date_flag','amount_col_man','ratio_row_section','row_noOfCharacters','remittance_result','total_digits_coded','row_JosasisLRCoordinates_left','row_JosasisLRCoordinates_right','row_distanceFromLeft','row_distanceFromTop']
+cols=['count_of_features','ref_no_bool','date_flag','amount_col_man','ratio_row_section','row_noOfCharacters','remittance_result','total_digits_coded','row_distanceFromLeft','row_distanceFromTop']
+
 X_train=data[cols]
 X_validation=df3[cols]
 Y_train = data['is_remittance_final'].reset_index(drop=True)
 Y_validation = df3['is_remittance_final'].reset_index(drop=True)
 
-rfc = RandomForestClassifier(n_estimators=300)
+
+rfc = RandomForestClassifier(n_estimators=170,max_depth=15,random_state=42)
 rfc.fit(X_train, Y_train)
 predictions = rfc.predict(X_validation)
 predictions_prob=rfc.predict_proba(X_validation)
 print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
-#
-# thresh=[0.1,0.2,0.3,0.4]
-# for i in thresh:
-#     combined_predictions ,threshold_actual , threshold_predictions , threshold_prob=function_threshold(predictions,predictions_prob,Y_validation,thresh_list=[0.5,i])
-#     print("Lost samples:", 1 - (len(threshold_predictions)/len(predictions)))
-#     print_metrics(threshold_actual,threshold_predictions,threshold_prob)
-#     print(0.5,i)
-#     print("\n","\n")
-#     print('******************************************',"\n")
-#
-# thresh=[0.9,0.8,0.7,0.6]
-# for i in thresh:
-#     combined_predictions ,threshold_actual , threshold_predictions , threshold_prob=function_threshold(predictions,predictions_prob,Y_validation,thresh_list=[i,0.5])
-#     print("Lost samples:", 1 - (len(threshold_predictions)/len(predictions)))
-#     print_metrics(threshold_actual,threshold_predictions,threshold_prob)
-#     print(i,0.5)
-#     print("\n","\n")
-#     print('******************************************',"\n")
-# combined_predictions ,threshold_actual , threshold_predictions , threshold_prob=function_threshold(predictions,predictions_prob,Y_validation,thresh_list=[0.7,0.1])
-# print("Lost samples:", 1 - (len(threshold_predictions)/len(predictions)))
-# print_metrics(threshold_actual,threshold_predictions,threshold_prob)
 
-# temp=pd.DataFrame()
-# temp=data[data['page_type_final']=='others'][['date_flag','amount_col_man','ratio_row_section','row_noOfCharacters','remittance_result','total_digits_coded','row_JosasisLRCoordinates_left','row_JosasisLRCoordinates_right','row_distanceFromLeft','row_distanceFromTop']]
-# temp2=pd.DataFrame()
-# temp2=data[data['page_type_final']=='others']['is_remittance_final'].reset_index(drop=True)
-# X_validation=X_validation.append(temp,ignore_index=True)
-# Y_validation=Y_validation.append(temp2,ignore_index=True)
-# X_validation=X_validation.reset_index(drop=True)
-# Y_validation=Y_validation.reset_index(drop=True)
+df3['predictions']=predictions
+
+for i in range(0,df3.shape[0]):
+    df3.at[i,'pred_proba_0']=predictions_prob[i][0]
+    df3.at[i, 'pred_proba_1'] = predictions_prob[i][1]
+
+
+df3=df3[['ratio_row_section','total_digits_coded','check_checkAmount','check_checkNumber','page_pageNumber','row_rowNumber','row_string','amount_fetched','ref_no_bool','amount_col_man','date_flag','remittance_result','is_heading','is_total_final','count_of_features','is_remittance_final','predictions','is_remittance_final_original','pred_proba_0','pred_proba_1']]
+df3.to_csv("D:\\New folder\\Modspace\\CSVs\\not_success_remittance_pages2.csv")
+#df3.to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\success_21.csv")
+print(predictions_prob)
+
+# next_test=pd.DataFrame()
+# diff_checks2=df3[df3['is_remittance_final']!=df3['predictions']]['check_checkNumber'].unique()
+#
+# for i in df3['check_checkNumber'].unique():
+#     if i in diff_checks2:
+#         next_test=next_test.append(df3[df3['check_checkNumber']==i],ignore_index=True)
+#     else:
+#         data=data.append(df3[df3['check_checkNumber']==i],ignore_index=True)
+#
+#
+#
+#
+# X_train=data[cols]
+# X_validation=next_test[cols]
+# Y_train = data['is_remittance_final'].reset_index(drop=True)
+# Y_validation = next_test['is_remittance_final'].reset_index(drop=True)
+#
+#
+# rfc = RandomForestClassifier(n_estimators=170,max_depth=15,random_state=42)
+# rfc.fit(X_train, Y_train)
 # predictions = rfc.predict(X_validation)
+# predictions_prob=rfc.predict_proba(X_validation)
 # print(accuracy_score(Y_validation, predictions))
 # print(confusion_matrix(Y_validation, predictions))
 # print(classification_report(Y_validation, predictions))
-
-df3['predictions']=predictions
-df3=df3[['ratio_row_section','total_digits_coded','page_type','check_checkAmount','check_checkNumber','page_pageNumber','row_rowNumber','row_string','amount_col_man','date_flag','remittance_result','is_heading','is_total_final','is_remittance_final','predictions','ocr_filepath']]
-df3.to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\success_2.csv")
-print(predictions_prob)
 #
+# next_test['predictions']=predictions
+#
+# for i in range(0,next_test.shape[0]):
+#     next_test.at[i,'pred_proba_0']=predictions_prob[i][0]
+#     next_test.at[i, 'pred_proba_1'] = predictions_prob[i][1]
+#
+#
+# next_test=next_test[['ratio_row_section','total_digits_coded','check_checkAmount','check_checkNumber','page_pageNumber','row_rowNumber','row_string','amount_fetched','ref_no_bool','amount_col_man','date_flag','remittance_result','is_heading','is_total_final','count_of_features','is_remittance_final','predictions','is_remittance_final_original','pred_proba_0','pred_proba_1']]
+# next_test.to_csv("D:\\New folder\\Modspace\\CSVs\\not_success_remittance_pages.csv")
+
+
+
+
+
+importances = rfc.feature_importances_
+print(importances)
+std = np.std([tree.feature_importances_ for tree in rfc.estimators_],
+             axis=0)
+indices = np.argsort(importances)[::-1]
+print("Feature ranking:")
+#print(train_features.columns)
+
+for f in range(X_train.shape[1]):
+    print("%d. %s (%f)" % (f + 1, cols[indices[f]], importances[indices[f]]))
+
+
+print('Total OCRs : ',df3['check_checkNumber'].unique().shape[0])
 df3=df3.reset_index(drop=True)
 to_check=pd.DataFrame()
+flag1=0
+flag2=0
+flag3=0
 count_original=0
 count_predicted=0
 for i in df3['check_checkNumber'].unique():
@@ -355,12 +482,64 @@ for i in df3['check_checkNumber'].unique():
         count_original = temp[temp['is_remittance_final']==1].shape[0]
         count_predicted = temp[temp['predictions']==1].shape[0]
         if count_original!=count_predicted:
-            print(count_original,count_predicted)
             to_check=to_check.append(temp,ignore_index=True)
             to_check=to_check.reset_index(drop=True)
 
-to_check.to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\to_check.csv")
+print('Total OCRs mispredicted : ',df3[df3['is_remittance_final']!=df3['predictions']]['check_checkNumber'].unique().shape[0])
+# print('Total OCRs : ',next_test['check_checkNumber'].unique().shape[0])
+# print('Total OCRs mispredicted : ',next_test[next_test['is_remittance_final']!=next_test['predictions']]['check_checkNumber'].unique().shape[0])
 
+
+print('Total OCRs mispredicted in terms of counts: ',to_check['check_checkNumber'].unique().shape[0])
+print('Total OCRs mispredicted in non-remittance pages in terms of counts: ',to_check[to_check['page_type']!=2]['check_checkNumber'].unique().shape[0])
+print('Total OCRs mispredicted in remittance pages in terms of counts: ',to_check[to_check['page_type']==2]['check_checkNumber'].unique().shape[0])
+to_check.to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\to_check1.csv")
+
+temp2=pd.DataFrame()
+flag1=0
+flag2=0
+flag3=0
+for i in to_check['check_checkNumber'].unique():
+    temp = pd.DataFrame()
+    temp = to_check[to_check['check_checkNumber'] == i]
+    temp.reset_index(drop=True, inplace=True)
+    count_original = temp[temp['is_remittance_final'] == 1].shape[0]
+    count_predicted = temp[temp['predictions'] == 1].shape[0]
+    if ((count_original == 0) & (count_predicted > 0)):
+        flag1 = flag1 + 1
+    elif ((count_original > 0) & (count_predicted == 0)):
+        flag2 = flag2 + 1
+    elif ((count_original > 0) & (count_predicted > 0) & (count_original != count_predicted)):
+        flag3 = flag3 + 1
+        temp2=temp2.append(temp,ignore_index=True)
+temp2=temp2.reset_index(drop=True)
+temp2.to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\to_check21.csv")
+print('\n','At an OCR level - All page types are concerned')
+print('actual = 0  predicted > 0  :', flag1)
+print('actual > 0  predicted = 0  :', flag2)
+print('actual > 0  predicted > 0  but actual != predicted  :', flag3)
+print('Total = ',flag1+flag2+flag3)
+
+flag1=0
+flag2=0
+flag3=0
+for i in to_check['check_checkNumber'].unique():
+    temp = pd.DataFrame()
+    temp = to_check[(to_check['check_checkNumber'] == i) & (to_check['page_type']==2)]
+    temp.reset_index(drop=True, inplace=True)
+    count_original = temp[temp['is_remittance_final'] == 1].shape[0]
+    count_predicted = temp[temp['predictions'] == 1].shape[0]
+    if ((count_original == 0) & (count_predicted > 0)):
+        flag1 = flag1 + 1
+    elif ((count_original > 0) & (count_predicted == 0)):
+        flag2 = flag2 + 1
+    elif ((count_original > 0) & (count_predicted > 0) & (count_original != count_predicted)):
+        flag3 = flag3 + 1
+print('\n','At an OCR level - only remittance pages are considered')
+print('actual = 0  predicted > 0  :', flag1)
+print('actual > 0  predicted = 0  :', flag2)
+print('actual > 0  predicted > 0  but actual != predicted  :', flag3)
+print('Total = ',flag1+flag2+flag3)
 
 #
 #
@@ -1077,3 +1256,17 @@ to_check.to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\to_check.csv")
 # temp=data.groupby(['check_checkNumber','page_pageNumber']).size().reset_index().rename(columns={0:'count'})
 # print(temp.head(4))
 # print(temp.shape[0])
+
+print(1&1)
+
+
+data=pd.read_csv(r"D:\New folder\Modspace\CSVs\Modspace_MOHIT.csv", sep=',',encoding='cp1256')
+data1=pd.read_csv(r"D:\New folder\Modspace\CSVs\Modspace_SHUBHAM.csv", sep=',',encoding='cp1256')
+data2=pd.read_csv(r"D:\New folder\Modspace\CSVs\Modspace_SURAJ.csv", sep=',',encoding='cp1256')
+data3=pd.read_csv(r"D:\New folder\Modspace\CSVs\UNILEVER_GAURAV.csv", sep=',',encoding='cp1256')
+
+data=data.append(data1,ignore_index=True)
+data=data.append(data2,ignore_index=True)
+data=data.append(data3,ignore_index=True)
+
+data.to_csv("D:\\New folder\\Modspace\\CSVs\\COMBINED_CSV.csv")
