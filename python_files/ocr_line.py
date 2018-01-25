@@ -296,7 +296,7 @@ det = pd.DataFrame({"str": er.values, "check_amount": ch.values, "total":
 
 det['pred'] = det.apply(func, axis=1)
 det['pred'] = det.apply(afterPred, axis=1)
-dataset_test['is_total'] = det['pred']
+dataset_test['is_total_final'] = det['pred']
 dataset_test.to_csv(test_file)
 # det.to_csv("det1.csv")
 # a4 = pd.DataFrame(data=predictions, columns=['predictions'])

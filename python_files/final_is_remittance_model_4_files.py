@@ -123,7 +123,7 @@ for i in data2['check_checkNumber'].unique():
         first_row=1
         last_row=temp.at[temp.shape[0]-1,'row_rowNumber']
         df = pd.DataFrame()
-        df = temp[temp['is_total'] == 1]
+        df = temp[temp['is_total_final'] == 1]
         df.sort_values('row_rowNumber', inplace=True)
         df = df.reset_index(drop=True)
         df2 = pd.DataFrame()
