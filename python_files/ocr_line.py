@@ -217,7 +217,7 @@ def last(x):
     return x
 
 
-dataset = dataset[dataset['page_type_final'] == 'remittance'].reset_index()
+# dataset = dataset[dataset['page_type_final'] == 'remittance'].reset_index()
 print(dataset.shape)
 print(dataset_test.shape)
 
