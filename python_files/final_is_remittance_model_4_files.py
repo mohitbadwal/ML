@@ -1,5 +1,7 @@
 import pandas as pd
 import random
+
+import sys
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 import re
 from sklearn import model_selection
@@ -26,42 +28,48 @@ from dateutil.parser import parse
 ####################################################################################################
 
 
-data_set=pd.read_csv(r"D:\New folder\Modspace\CSVs\COMBINED_CSV.csv", sep=',',encoding='cp1256')
-#data2=pd.read_csv(r"D:\New folder\Modspace\CSVs\COMBINED_CSV_test.csv", sep=',',encoding='cp1256',low_memory=False)
-
-#data2=pd.read_csv(r"C:\Users\shubham.kamal\Desktop\LITM\Success_rows_final1.csv",sep=',',encoding='cp1256')
-#data=pd.read_csv(r"C:\Users\shubham.kamal\Desktop\LITM\Not_Success_rows_ver_clean.csv",sep=',',encoding='cp1256')
-
-
-data_set=data_set[data_set['page_pageType']=='REMITTANCE_PAGE']
-#data2=data2[data2['page_pageType']=='REMITTANCE_PAGE']
-data=pd.DataFrame()
-data2=pd.DataFrame()
-diff_checks=data_set[data_set['is_remittance_final']!=data_set['is_remittance_final_original']]['check_checkNumber'].unique()
-
-for i in data_set['check_checkNumber'].unique():
-    if i not in diff_checks:
-        data=data.append(data_set[data_set['check_checkNumber']==i],ignore_index=True)
-    else:
-        data2 = data2.append(data_set[data_set['check_checkNumber'] == i], ignore_index=True)
-
-data=data.reset_index(drop=True)
-data2=data2.reset_index(drop=True)
-
+# data_set=pd.read_csv(r"D:\New folder\Modspace\CSVs\COMBINED_CSV.csv", sep=',',encoding='cp1256')
+# #data2=pd.read_csv(r"D:\New folder\Modspace\CSVs\COMBINED_CSV_test.csv", sep=',',encoding='cp1256',low_memory=False)
+#
+# #data2=pd.read_csv(r"C:\Users\shubham.kamal\Desktop\LITM\Success_rows_final1.csv",sep=',',encoding='cp1256')
+# #data=pd.read_csv(r"C:\Users\shubham.kamal\Desktop\LITM\Not_Success_rows_ver_clean.csv",sep=',',encoding='cp1256')
+#
+#
+# data_set=data_set[data_set['page_pageType']=='REMITTANCE_PAGE']
+# #data2=data2[data2['page_pageType']=='REMITTANCE_PAGE']
+# data=pd.DataFrame()
+# data2=pd.DataFrame()
+# diff_checks=data_set[data_set['is_remittance_final']!=data_set['is_remittance_final_original']]['check_checkNumber'].unique()
+#
+# for i in data_set['check_checkNumber'].unique():
+#     if i not in diff_checks:
+#         data=data.append(data_set[data_set['check_checkNumber']==i],ignore_index=True)
+#     else:
+#         data2 = data2.append(data_set[data_set['check_checkNumber'] == i], ignore_index=True)
+#
+# data=data.reset_index(drop=True)
+# data2=data2.reset_index(drop=True)
+#
+# # data.to_csv("D:\\New folder\\Modspace\\CSVs\\COMBINED_CSV_training_new.csv")
+# #data2.to_csv("D:\\New folder\\Modspace\\CSVs\\Combined_test_Gaurav_Heading_Model2.csv")
+# data2=pd.read_csv(r"D:\New folder\Modspace\CSVs\Combined_test_Gaurav_Heading_Model2.csv", sep=',',encoding='cp1256')
+#
+# suraj_success=pd.read_csv(r"D:\New folder\Modspace\CSVs\Success_Modspace_Suraj.csv", sep=',',encoding='cp1256')
+#
+# #data=data.append(suraj_success,ignore_index=True)
 # data.to_csv("D:\\New folder\\Modspace\\CSVs\\COMBINED_CSV_training_new.csv")
-#data2.to_csv("D:\\New folder\\Modspace\\CSVs\\Combined_test_Gaurav_Heading_Model2.csv")
-data2=pd.read_csv(r"D:\New folder\Modspace\CSVs\Combined_test_Gaurav_Heading_Model2.csv", sep=',',encoding='cp1256')
-
-suraj_success=pd.read_csv(r"D:\New folder\Modspace\CSVs\Success_Modspace_Suraj.csv", sep=',',encoding='cp1256')
-
-#data=data.append(suraj_success,ignore_index=True)
-data.to_csv("D:\\New folder\\Modspace\\CSVs\\COMBINED_CSV_training_new.csv")
 # final model hai tera yea ?
 # hahahahhs
 # data.loc[data['page_type_final']=='check','page_type']=0
 # data.loc[data['page_type_final']=='envelope','page_type']=1
 # data.loc[(data['page_type_final']!='check') & (data['page_type_final']!='envelope'),'page_type']=2
 # data=data.reset_index(drop=True)
+
+data=pd.read_csv(r"D:\New_folder\Modspace\CSVs\COMBINED_CSV_training_new.csv",encoding='cp1256',sep=',')
+data2=pd.read_csv(r"D:\New_folder\Modspace\CSVs\COMBINED_CSV_testing_new.csv",encoding='cp1256',sep=',')
+print(data.shape,data2.shape)
+data=data[data['page_pageType']=='REMITTANCE_PAGE']
+data2=data2[data2['page_pageType']=='REMITTANCE_PAGE']
 
 data3=data.append(data2,ignore_index=True)
 data3['row_noOfCharacters']=pd.cut(data3['row_noOfCharacters'],bins=10).cat.codes
@@ -409,8 +417,7 @@ for i in range(0,df3.shape[0]):
     df3.at[i, 'pred_proba_1'] = predictions_prob[i][1]
 
 
-df3=df3[['ratio_row_section','total_digits_coded','check_checkAmount','check_checkNumber','page_pageNumber','row_rowNumber','row_string','amount_fetched','ref_no_bool','amount_col_man','date_flag','remittance_result','is_heading','is_total_final','count_of_features','is_remittance_final','predictions','is_remittance_final_original','pred_proba_0','pred_proba_1']]
-df3.to_csv("D:\\New folder\\Modspace\\CSVs\\not_success_remittance_pages2.csv")
+# df3=df3[['ratio_row_section','total_digits_coded','check_checkAmount','check_checkNumber','page_pageNumber','row_rowNumber','row_string','amount_fetched','ref_no_bool','amount_col_man','date_flag','remittance_result','is_heading','is_total_final','count_of_features','is_remittance_final','predictions','is_remittance_final_original','pred_proba_0','pred_proba_1']]
 #df3.to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\success_21.csv")
 print(predictions_prob)
 

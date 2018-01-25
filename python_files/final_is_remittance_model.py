@@ -200,20 +200,24 @@ data=data.reset_index(drop=True)
 data2=data2.reset_index(drop=True)
 
 
-
+print('data2 unique',data2['check_checkNumber'].unique().shape)
 df3=pd.DataFrame()
 print('shape',data2.shape[0])
 data2=data2.reset_index(drop=True)
 for i in data2['check_checkNumber'].unique():
+    count=0
     for j in data2[data2['check_checkNumber']==i]['page_pageNumber'].unique():
         temp=pd.DataFrame()
         temp=data2[(data2['check_checkNumber']==i) & (data2['page_pageNumber']==j)]
         temp=temp.reset_index(drop=True)
         for k in range(0,temp.shape[0]):
             if temp.at[k,'is_remittance_final']==1:
+                count=count+1
                 for l in range(0,temp.shape[0]):
                     df3=df3.append(temp.iloc[[l]],ignore_index=True)
                 break
+    if count==0:
+        print(i)
 df3=df3.reset_index(drop=True)
 print('df3 unique',df3['check_checkNumber'].unique().shape)
 vocab=['inst','policy'
