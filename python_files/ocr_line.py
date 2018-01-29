@@ -179,7 +179,7 @@ def totalFlag(x):
 
 
 def afterPred(x):
-    if x['pred'] == 0 and x['total'] == 0:
+    if x['pred'] == 0 and (x['total'] == 0 or x['total'] == 1) :
         eddd = str(x['str'])
         e = x['check_amount']
         eddd = cleaning_new(eddd)
