@@ -66,6 +66,13 @@ from dateutil.parser import parse
 # data=data.reset_index(drop=True)
 
 data=pd.read_csv(r"D:\New_folder\Modspace\CSVs\COMBINED_CSV_training_new.csv",encoding='cp1256',sep=',')
+data3=pd.read_csv(r"D:\New_folder\Modspace\CSVs\Success_Modspace_Suraj.csv",encoding='cp1256',sep=',')
+
+
+data=data.append(data3,ignore_index=True)
+
+data.to_csv("D:\\New_folder\\Modspace\\CSVs\\suraj_tere_liye.csv")
+
 data2=pd.read_csv(r"D:\New_folder\Modspace\CSVs\COMBINED_CSV_testing_new.csv",encoding='cp1256',sep=',')
 print(data.shape,data2.shape)
 data=data[data['page_pageType']=='REMITTANCE_PAGE']
@@ -418,7 +425,7 @@ for i in range(0,df3.shape[0]):
 
 
 # df3=df3[['ratio_row_section','total_digits_coded','check_checkAmount','check_checkNumber','page_pageNumber','row_rowNumber','row_string','amount_fetched','ref_no_bool','amount_col_man','date_flag','remittance_result','is_heading','is_total_final','count_of_features','is_remittance_final','predictions','is_remittance_final_original','pred_proba_0','pred_proba_1']]
-#df3.to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\success_21.csv")
+df3.to_csv("C:\\Users\\shubham.kamal\\Desktop\\LITM\\success_21.csv")
 print(predictions_prob)
 
 # next_test=pd.DataFrame()
