@@ -22,16 +22,41 @@ else:
     sys.exit(1)
 
 
+def minOps(A, B):
+    m = len(A)
+    n = len(B)
+    s = max(n, m)
+    if n != m:
+        f = 0
+        s = max(n, m)
+        s2 = min(n, m)
+        if s == m:
+            f = 1
+        for i in range(s2, s):
+            if f == 0:
+                A = A + '+'
+            else:
+                B = B + '+'
+
+    count = 0
+    for der in range(s):
+        if A[der] != B[der]:
+            count += 1
+    return count
+
+
 def cleaning(sentence):
+    fd = '?-+:)(;,*\'°—'
+    punctuation_removed = [char for char in sentence if char not in fd]
     punctuation_removed = [char for char in sentence if char not in string.punctuation]
-    punctuation_removed = [char for char in punctuation_removed if char not in string.digits]
+    # punctuation_removed = [char for char in punctuation_removed if char not in string.digits]
     punctuation_removed = "".join(punctuation_removed)
     l = [word.lower() for word in punctuation_removed.split()]
-    return [word for word in l if len(word) > 2]
+    return ' '.join([word for word in l if len(word) > 2])
 
 
 def cleaning_new(sentence):
-    fd = '?-+:)(;,'
+    fd = '?-+:)(;,*\'°—'
     punctuation_removed = [char for char in sentence if char not in fd]
     punctuation_removed = "".join(punctuation_removed)
     l = [word.lower() for word in punctuation_removed.split()]
@@ -46,16 +71,34 @@ def cleanandstem(sentence):
 '''
 $45,342.45 $56,23.78
 '''
-pattern_number = re.compile('([$]?[0-9]*[\,]?[0-9]*[\.][0-9]+)')
+pattern_number = re.compile('([$]?[0-9]*[\,]?[0-9]*[\.]?[0-9]+)')
+regx = re.compile('(?<![\d.])'
+                  '(?!\d*\.\d*\.)'  # excludes certain string as not being numbers
+                  '((\d|\.\d)([\d.])*?)'  # the only matching  group
+                  '([0\.]*)'
+                  '(?![\d.])')
 
 
 def convertNumber(s):
+    # print(s)
     d = ''
     for i in str(s):
         if i != ',' and i != '$':
             d = d + i
     if len(d) > 0:
-        return int(float(d))
+        return (float(d))
+    else:
+        return -1
+
+
+def convertNumber_new(s):
+    # print(s)
+    d = ''
+    for i in str(s):
+        if i != ',' and i != '$' and i != '.':
+            d = d + i
+    if len(d) > 0:
+        return (float(d))
     else:
         return -1
 
@@ -86,11 +129,11 @@ def isNumber(s, e):
     if i == 1:
         f = 0
         for x in er:
-            #print("printing", x, e)
+            # print("printing", x, e)
             if convertNumber(x) >= 0:  # int(float(e)):
                 gh = 5
                 # li = li[:f]
-                #print("here", e)
+                # print("here", e)
                 li.append(x)
                 f = 1
                 break
@@ -102,6 +145,9 @@ def isNumber(s, e):
 
 
 def secondChance(s, e):
+    e = cleaning(str(e))
+    # length_integer = len(e)
+    print(s, e)
     li = str(s).split(" ")
     i = 0
     gh = 0
@@ -110,8 +156,9 @@ def secondChance(s, e):
     er = []
     er1 = []
     for x in li:
-        if pattern_number.fullmatch(x) is not None:
-            er.append(x)
+        number = re.findall(r'\d+', x)
+        if len(number) > 0:
+            er.append(number[0])
             er1.append(d)
             i = 1
             if f == -1:
@@ -123,11 +170,20 @@ def secondChance(s, e):
     for j in range(0, len(er1)):
         li.pop(er1[j])
     # print(er, er1, i)
+
+    faltu = int((regx.sub('\\1', e)))
+    length_integer = len(str(faltu)) - 1
+    dope = 2
+    if length_integer <= 3:
+        dope = 1
     if i == 1:
         f = 0
         for x in er:
             # print("printing", x, e)
-            if convertNumber(x) == int(float(e)):
+            # if (int(float(e))-(10**(length_integer-1))) <= convertNumber(x) <= (int(float(e))-(10**(length_integer-1))):
+            faltu2 = int(convertNumber_new(regx.sub('\\1', x)))
+            print(faltu, faltu2)
+            if 0 <= minOps(str(faltu), str(faltu2)) <= dope:
                 gh = 5
                 # li = li[:f]
                 # print("here", e)
@@ -155,7 +211,7 @@ def totalFlag(x):
     s = str(eddd).lower().strip()
     # print(s)
     s, gh = isNumber(s, e)
-    # print(s)
+    # print(s,gh)
     # if gh == 0:
     if pattern.fullmatch(s) is not None:
         if re.search('(gross)', s) is None and re.search('(render)', s) is None \
@@ -179,16 +235,20 @@ def totalFlag(x):
 
 
 def afterPred(x):
-    if x['pred'] == 0 and (x['total'] == 0 or x['total'] == 1) :
+    if x['pred'] == 0:  # or (x['pred'] == 1 and x['total_regex'] == 0):
         eddd = str(x['str'])
         e = x['check_amount']
-        eddd = cleaning_new(eddd)
+        eddd = cleaning(eddd)
         s = str(eddd).lower().strip()
         # if re.search('(statement)',s) is None:
         s, gh_second = secondChance(s, e)
         if gh_second != 0:
+            print(s, gh_second, 1)
             return 1
         else:
+            #   if x['pred'] == 1:
+            #       return x['pred']
+            #  else:
             return 0
     return x['pred']
 
@@ -225,16 +285,16 @@ print(dataset_test.shape)
 # theString = countVectorizer.fit_transform(dataset['row_string'])
 
 dataset['rows'] = dataset['page_noOfRows'] - dataset['row_rowNumber']
-dataset['total'] = dataset.apply(totalFlag, axis=1)
+dataset['total_regex'] = dataset.apply(totalFlag, axis=1)
 dataset = last(dataset)
 
 dataset_test['rows'] = dataset_test['page_noOfRows'] - dataset_test['row_rowNumber']
-dataset_test['total'] = dataset_test.apply(totalFlag, axis=1)
+dataset_test['total_regex'] = dataset_test.apply(totalFlag, axis=1)
 dataset_test = last(dataset_test)
 
-tfidf = TfidfVectorizer(tokenizer=cleanandstem, min_df=100, stop_words='english', vocabulary=
+tfidf = TfidfVectorizer(tokenizer=cleanandstem, stop_words='english', vocabulary=
 {'totals',
- # 'totals',
+ 'total',
  'grand'
  })
 theString = tfidf.fit_transform(dataset['row_string'])
@@ -253,10 +313,26 @@ theTestString = tfidf.transform(dataset_test['row_string'])
 
 combine2 = pd.DataFrame(theTestString.todense())
 combine2.columns = tfidf.get_feature_names()
+dataset['totals'] = combine1['totals']
+dataset['total'] = combine1['total']
+dataset['grand'] = combine1['grand']
+dataset_test['totals'] = combine2['totals']
+dataset_test['total'] = combine2['total']
+dataset_test['grand'] = combine2['grand']
+# da = dataset.columns
+# da_test = dataset_test.columns
+# print(dataset.shape,combine1.shape)
+# dataset = pd.DataFrame(pd.concat([combine1.reset_index(drop=True), dataset.reset_index(drop=True)], axis=1,
+#                                 ignore_index=True),columns=da)
+# dataset = dataset.reset_index(drop=True).append(combine1,ignore_index=True)
 
+# dataset.to_csv("wwwww.csv")
+# dataset_test = pd.DataFrame(pd.concat([combine2.reset_index(drop=True), dataset_test.reset_index(drop=True)], axis=1,
+#                                 ignore_index=True),columns=da_test)
+# dataset_test=dataset_test.reset_index(drop=True).append(combine2.reset_index(drop=True),ignore_index=True)
 X = dataset.loc[:, [  # 'row_distanceFromTop',
     # 'row_isLastRow',
-    'total',
+    # 'total_regex',
 
     'rows',
     'row_string',
@@ -266,7 +342,7 @@ Y = dataset.loc[:, 'is_total_final']
 
 X_test = dataset_test.loc[:, [  # 'row_distanceFromTop',
     # 'row_isLastRow',
-    'total',
+    # 'total_regex',
     'rows',
     'row_string',
     'check_checkAmount']]
@@ -284,21 +360,38 @@ def func(x):
     return x['pred']
 
 
-rfc = MLPClassifier(hidden_layer_sizes=(100, 100))
+rfc = RandomForestClassifier(n_estimators=100)
 rfc.fit(X, Y)
-# print(rfc.feature_importances_)
+print(rfc.feature_importances_)
 predictions = rfc.predict(X_test)
 predictions_prob = rfc.predict_proba(X_test)
 pred_prob = pd.DataFrame(data=predictions_prob, columns=[0, 1])
-det = pd.DataFrame({"str": er.values, "check_amount": ch.values, "total":
-    X_test.copy(deep=False).iloc[:, -2].values, "pred": predictions, "pred_proba_0": pred_prob[0],
-                    "pred_proba_1": pred_prob[1]})
+det = pd.DataFrame({"str": er.values, "check_amount": ch.values, "total_regex":
+    dataset_test['total_regex'], "pred": predictions, "pred_proba_0": pred_prob[0],
+                    "pred_proba_1": pred_prob[1], "is_total": dataset_test['is_total_final_original']})
 
-det['pred'] = det.apply(func, axis=1)
+# det['pred'] = det.apply(func, axis=1)
 det['pred'] = det.apply(afterPred, axis=1)
 dataset_test['is_total_final'] = det['pred']
+'''
+data_group = dataset_test.groupby(by=['check_checkNumber', 'check_checkAmount', 'page_pageNumber'])
+dataset_new = pd.DataFrame()
+for name, group in data_group:
+    group.reset_index(inplace=True)
+    group['is_total_new'] = 0
+    for g_pos in range(len(group) - 1, -1, -1):
+        # print(g_pos)
+        if group.iloc[g_pos]['is_total_final'] == 1:
+            group.loc[g_pos, 'is_total_new'] = 1
+            # print(g_pos)
+            break
+    dataset_new = pd.concat([dataset_new, group.reset_index()], axis=0, ignore_index=True)
+# dataset_test.to_csv(test_file)
+dataset_new.to_csv(test_file)
+# '''
+
 dataset_test.to_csv(test_file)
-# det.to_csv("det1.csv")
+# det.to_csv(r"D:\LITM_Data\Modspace\CSVs\det1.csv")
 # a4 = pd.DataFrame(data=predictions, columns=['predictions'])
 # df = pd.concat([er.reset_index(), det['y_val'], det['pred']], axis=1)
 # df.to_csv("wer.csv")
